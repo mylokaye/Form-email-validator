@@ -120,6 +120,155 @@
         filter: blur(56px);
         transform: translateX(-50%);
       }
+
+      html[data-theme="light"] body {
+        background: #f5f4f1 !important;
+        color: #000 !important;
+      }
+
+      html[data-theme="light"] .background-container {
+        display: none;
+      }
+
+      html[data-theme="light"] .bg-panel {
+        border-color: transparent !important;
+        border-radius: 24px;
+        background: #fff !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06) !important;
+      }
+
+      html[data-theme="light"] nav[aria-label="Tool navigation"] {
+        border-color: transparent !important;
+        border-radius: 24px;
+        background: #fff !important;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.05) !important;
+      }
+
+      html[data-theme="light"] .border-line,
+      html[data-theme="light"] .border-white\/15,
+      html[data-theme="light"] .border-white\/10 {
+        border-color: transparent !important;
+      }
+
+      html[data-theme="light"] .text-white,
+      html[data-theme="light"] .text-ink,
+      html[data-theme="light"] .text-slate-100,
+      html[data-theme="light"] .text-slate-200 {
+        color: #000 !important;
+      }
+
+      html[data-theme="light"] .text-muted,
+      html[data-theme="light"] .text-slate-500,
+      html[data-theme="light"] .text-slate-600 {
+        color: rgba(0, 0, 0, 0.58) !important;
+      }
+
+      html[data-theme="light"] input,
+      html[data-theme="light"] textarea,
+      html[data-theme="light"] select,
+      html[data-theme="light"] .bg-black\/20 {
+        border-color: transparent !important;
+        background: #f5f4f1 !important;
+        color: #000 !important;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+      }
+
+      html[data-theme="light"] input:focus,
+      html[data-theme="light"] textarea:focus,
+      html[data-theme="light"] select:focus {
+        box-shadow: inset 0 0 0 1px #67e8f9, 0 0 0 3px rgba(103, 232, 249, 0.22);
+      }
+
+      html[data-theme="light"] .bg-white\/10,
+      html[data-theme="light"] .bg-white\/5 {
+        background: rgba(0, 0, 0, 0.05) !important;
+      }
+
+      html[data-theme="light"] .text-\[\#061014\] {
+        color: #000 !important;
+      }
+
+      html[data-theme="light"] .shadow-soft,
+      html[data-theme="light"] .shadow-control {
+        box-shadow: none !important;
+      }
+
+      html[data-theme="light"] .bg-accentSoft {
+        background: rgba(103, 232, 249, 0.16) !important;
+      }
+
+      html[data-theme="light"] .text-accent {
+        color: #0891b2 !important;
+      }
+
+      html[data-theme="light"] i[data-lucide],
+      html[data-theme="light"] svg[data-lucide] {
+        stroke: currentColor;
+      }
+
+      html[data-theme="light"] main {
+        min-height: calc(100vh - 48px);
+        margin-top: 24px;
+        margin-bottom: 24px;
+        border-radius: 32px;
+        background: rgba(255, 255, 255, 0.74);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.07);
+      }
+
+      html[data-theme="light"] .bg-panel.shadow-soft {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.055) !important;
+      }
+
+      html[data-theme="light"] nav[aria-label="Tool navigation"],
+      html[data-theme="light"] #themeToggle {
+        padding: 5px;
+        background: #f5f4f1 !important;
+        box-shadow: none !important;
+      }
+
+      html[data-theme="light"] #themeToggle {
+        padding-inline: 16px;
+        color: rgba(0, 0, 0, 0.6) !important;
+      }
+
+      html[data-theme="light"] .tool-nav {
+        border-radius: 14px;
+        color: rgba(0, 0, 0, 0.54) !important;
+      }
+
+      html[data-theme="light"] .tool-nav[aria-current="page"] {
+        background: #000 !important;
+        color: #fff !important;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+      }
+
+      html[data-theme="light"] .generator-type-tab {
+        color: rgba(0, 0, 0, 0.52) !important;
+      }
+
+      html[data-theme="light"] .generator-type-tab.text-accent {
+        color: #000 !important;
+      }
+
+      html[data-theme="light"] .generator-type-tab.after\:bg-accent::after {
+        background: #000 !important;
+      }
+
+      html[data-theme="light"] .rounded-full.bg-white\/10 {
+        background: #f5f4f1 !important;
+      }
+
+      html[data-theme="light"] button:not(.bg-accent):not(.tool-nav):not(#themeToggle) {
+        border-radius: 14px;
+      }
+
+      html[data-theme="light"] input,
+      html[data-theme="light"] textarea,
+      html[data-theme="light"] select,
+      html[data-theme="light"] .bg-black\/20,
+      html[data-theme="light"] .bg-\[\#111827\] {
+        background-color: #f5f4f1 !important;
+      }
     </style>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
@@ -150,6 +299,10 @@
               Validate
             </button>
           </nav>
+          <button id="themeToggle" type="button" aria-pressed="false" class="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-muted transition hover:border-accent hover:text-accent">
+            <i data-lucide="sun" class="h-4 w-4"></i>
+            <span>Light</span>
+          </button>
         </div>
       </header>
 
@@ -286,7 +439,7 @@
         </aside>
       </section>
 
-      <section id="generateTool" data-tool-panel="generate" class="grid items-stretch gap-5 xl:grid-cols-[470px_minmax(0,1fr)_470px]">
+      <section id="generateTool" data-tool-panel="generate" class="grid items-stretch gap-5 xl:grid-cols-2">
         <section class="min-h-[620px] overflow-hidden rounded-lg border border-white/15 bg-panel shadow-soft backdrop-blur-[18px]">
           <div class="grid grid-cols-3 border-b border-line" aria-label="Generator type">
             <button id="linkGeneratorTab" type="button" data-generator-type="Link" aria-current="page" class="generator-type-tab relative h-14 text-sm font-extrabold text-accent after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-accent after:content-['']">Link</button>
@@ -411,6 +564,16 @@
             </div>
           </section>
 
+          <aside class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-white/15 bg-panel shadow-soft backdrop-blur-[18px]">
+            <div class="flex items-center justify-between gap-3 px-5 py-4">
+              <h2 class="text-lg font-extrabold text-white">Recent</h2>
+              <span id="generatedItemCount" class="sr-only">0 items</span>
+            </div>
+            <div id="generatedItemsList" class="min-h-0 min-w-0 flex-1 max-w-full overflow-x-hidden overflow-y-auto px-5 pb-4">
+              <p class="px-1 py-2 text-sm font-medium text-muted">Generated items will appear here.</p>
+            </div>
+          </aside>
+
           <section id="generatorReadyCard" class="hidden items-center gap-5 rounded-lg border border-white/15 bg-panel p-5 shadow-soft backdrop-blur-[18px]">
             <div class="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-white/10 text-white"><i data-lucide="file-check-2" class="h-8 w-8"></i></div>
             <div class="min-w-0 flex-1">
@@ -421,15 +584,6 @@
           </section>
         </div>
 
-        <aside class="h-full min-h-[620px] overflow-hidden rounded-lg border border-white/15 bg-panel shadow-soft backdrop-blur-[18px]">
-          <div class="flex items-center justify-between gap-3 px-5 py-4">
-            <h2 class="text-lg font-extrabold text-white">Recent</h2>
-            <span id="generatedItemCount" class="sr-only">0 items</span>
-          </div>
-          <div id="generatedItemsList" class="min-h-0 min-w-0 max-h-[560px] max-w-full overflow-x-hidden overflow-y-auto px-5 pb-4">
-            <p class="px-1 py-2 text-sm font-medium text-muted">Generated items will appear here.</p>
-          </div>
-        </aside>
       </section>
 
       <div id="validatorErrorBox" class="hidden rounded-lg border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-100"></div>
@@ -752,6 +906,7 @@
       };
     </script>
     <script src="./app.js?v=20260614-combined"></script>
-    <script src="./generate.js?v=20260628-generate-redesign"></script>
+    <script src="./generate.js?v=20260717-tracking-toggle"></script>
+    <script src="./src/theme/theme.js?v=20260717-light-theme"></script>
   </body>
 </html>

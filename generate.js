@@ -114,6 +114,8 @@
       const active = button.dataset.linkTrackingType === type;
       button.classList.toggle("bg-accentSoft", active);
       button.classList.toggle("text-accent", active);
+      button.classList.toggle("ring-1", active);
+      button.classList.toggle("ring-accent/70", active);
       button.classList.toggle("text-muted", !active);
       button.classList.toggle("hover:bg-white/10", !active);
       button.classList.toggle("hover:text-white", !active);

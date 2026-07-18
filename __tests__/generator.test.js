@@ -193,6 +193,8 @@ describe('Generate tool', () => {
     expect(document.getElementById('generatorFormatDescription').textContent).toContain('UTM');
     expect(document.getElementById('linkTrackingUtm').getAttribute('aria-pressed')).toBe('true');
     expect(document.getElementById('linkTrackingMtm').getAttribute('aria-pressed')).toBe('false');
+    expect(document.getElementById('linkTrackingUtm').classList.contains('ring-1')).toBe(true);
+    expect(document.getElementById('linkTrackingMtm').classList.contains('ring-1')).toBe(false);
   });
 
   test('generates, stores, and renders a tracked link', () => {
