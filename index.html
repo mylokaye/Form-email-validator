@@ -227,7 +227,7 @@
       }
 
       html[data-theme="light"] #themeToggle {
-        padding-inline: 16px;
+        padding: 0 !important;
         color: rgba(0, 0, 0, 0.6) !important;
       }
 
@@ -286,8 +286,7 @@
     </div>
 
     <main class="relative z-10 mx-auto flex min-h-screen max-w-[1708px] flex-col gap-8 px-5 py-7 lg:px-8">
-      <header class="flex justify-center pb-2">
-        <div class="flex flex-wrap items-center gap-3">
+      <header class="relative flex min-h-14 items-center justify-center pb-2">
           <nav class="flex gap-2 rounded-lg border border-white/15 bg-white/10 p-1 shadow-sm backdrop-blur-[18px]" aria-label="Tool navigation">
             <button id="generateNav" type="button" data-tool="generate" aria-current="page" onclick="emailTools.setActiveTool('generate')" class="tool-nav flex h-12 items-center justify-center rounded-md bg-accentSoft px-3 text-sm font-bold text-accent">
               Generate
@@ -302,11 +301,9 @@
               Logic
             </button>
           </nav>
-          <button id="themeToggle" type="button" aria-pressed="false" class="flex h-14 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-muted transition hover:border-accent hover:text-accent">
+          <button id="themeToggle" type="button" aria-pressed="false" class="absolute right-0 top-1 flex h-11 w-11 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-muted transition hover:border-accent hover:text-accent">
             <i data-lucide="sun" class="h-4 w-4"></i>
-            <span>Light</span>
           </button>
-        </div>
       </header>
 
       <section id="validatorTool" data-tool-panel="validator" class="hidden items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -402,6 +399,7 @@
             </div>
             <div id="logicSummaryPanel" class="min-h-0 flex-1 overflow-auto p-4">
               <dl id="logicSummaryRows" class="grid gap-2"></dl>
+              <div id="logicErrorBox" class="mt-4 hidden rounded-lg border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-100" role="alert"></div>
             </div>
             <div id="logicWarningsPanel" class="hidden min-h-0 flex-1 overflow-auto p-3">
               <p id="logicWarningsEmpty" class="px-1 py-2 text-sm font-medium text-muted">No invalid countries detected.</p>
@@ -958,7 +956,7 @@
     </script>
     <script src="./app.js?v=20260614-combined"></script>
     <script src="./generate.js?v=20260717-tracking-toggle"></script>
-    <script src="./src/theme/theme.js?v=20260717-light-theme"></script>
+    <script src="./src/theme/theme.js?v=20260720-icon-toggle"></script>
     <script src="./src/logic/logic.js?v=20260720-country-logic"></script>
   </body>
 </html>

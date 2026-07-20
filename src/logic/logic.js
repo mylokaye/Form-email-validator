@@ -10,6 +10,7 @@
     copy: document.getElementById('logicCopyButton'),
     clear: document.getElementById('logicClearButton'),
     summary: document.getElementById('logicSummaryRows'),
+    error: document.getElementById('logicErrorBox'),
     output: document.getElementById('logicXmlOutput'),
     summaryTab: document.getElementById('logicSummaryTab'),
     warningsTab: document.getElementById('logicWarningsTab'),
@@ -171,12 +172,41 @@
     });
   }
 
+  function setActionFlow(activeButton) {
+    [els.validate, els.generate, els.copy].forEach(function (button) {
+      var isActive = button === activeButton && !button.disabled;
+      button.classList.toggle('border-accent', isActive);
+      button.classList.toggle('bg-accent', isActive);
+      button.classList.toggle('text-[#061014]', isActive);
+      button.classList.toggle('shadow-control', isActive);
+      button.classList.toggle('hover:bg-cyan-200', isActive);
+      button.classList.toggle('border-white/15', !isActive);
+      button.classList.toggle('bg-white/10', !isActive);
+      button.classList.toggle('text-white', !isActive);
+      button.classList.toggle('hover:border-accent', !isActive);
+      button.classList.toggle('hover:text-accent', !isActive);
+    });
+  }
+
+  function showError(message) {
+    if (!els.error) return;
+    els.error.textContent = message;
+    els.error.classList.remove('hidden');
+  }
+
+  function clearError() {
+    if (!els.error) return;
+    els.error.textContent = '';
+    els.error.classList.add('hidden');
+  }
+
   function invalidateResults() {
     state.items = [];
     state.xml = '';
     els.generate.disabled = true;
     els.copy.disabled = true;
     els.output.value = '';
+    setActionFlow(els.validate);
     renderSummary();
   }
 
@@ -187,6 +217,7 @@
     els.output.value = '';
     els.copy.disabled = true;
     els.generate.disabled = state.items.length === 0 || state.items.some(function (item) { return item.status !== 'valid'; });
+    setActionFlow(els.generate.disabled ? els.validate : els.generate);
     renderSummary();
   }
 
@@ -197,6 +228,7 @@
     state.xml = buildFetchXml(state.items);
     els.output.value = state.xml;
     els.copy.disabled = false;
+    setActionFlow(els.copy);
   }
 
   function copy() {
@@ -210,6 +242,7 @@
     els.generate.disabled = true;
     els.copy.disabled = true;
     els.output.value = '';
+    setActionFlow(els.validate);
     renderSummary();
   }
 
@@ -225,10 +258,26 @@
     els.summaryTab.addEventListener('click', function () { setActiveDetails('summary'); });
     els.warningsTab.addEventListener('click', function () { setActiveDetails('warnings'); });
     els.validate.disabled = true;
-    fetch(MASTER_LIST_URL).then(function (response) { return response.text(); }).then(function (text) {
+    setActionFlow(els.validate);
+    fetch(MASTER_LIST_URL).then(function (response) {
+      if (!response.ok) throw new Error('Country master list request failed.');
+      return response.text();
+    }).then(function (text) {
       state.countries = parseCsv(text);
       state.loaded = hasExpectedHeaders(text) && isValidMasterList(state.countries);
       els.validate.disabled = !state.loaded;
+      setActionFlow(els.validate);
+      if (state.loaded) {
+        clearError();
+      } else {
+        showError('Country list is unavailable or has an invalid format.');
+      }
+    }).catch(function () {
+      state.countries = [];
+      state.loaded = false;
+      els.validate.disabled = true;
+      setActionFlow(els.validate);
+      showError('Country list could not be loaded. Refresh the page and try again.');
     });
     renderSummary();
     setActiveDetails('summary');

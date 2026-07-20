@@ -27,7 +27,7 @@ describe('Theme toggle', () => {
 
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(document.getElementById('themeToggle').getAttribute('aria-pressed')).toBe('true');
-    expect(document.getElementById('themeToggle').textContent).toContain('Dark');
+    expect(document.getElementById('themeToggle').getAttribute('aria-label')).toBe('Switch to dark mode');
     expect(document.querySelector('meta[name="theme-color"]').content).toBe('#f5f4f1');
   });
 

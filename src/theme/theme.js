@@ -20,8 +20,8 @@
     toggle.setAttribute('aria-pressed', String(isLight));
     toggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
     toggle.innerHTML = isLight
-      ? '<i data-lucide="moon" class="h-4 w-4"></i><span>Dark</span>'
-      : '<i data-lucide="sun" class="h-4 w-4"></i><span>Light</span>';
+      ? '<i data-lucide="moon" class="h-4 w-4"></i>'
+      : '<i data-lucide="sun" class="h-4 w-4"></i>';
     window.lucide?.createIcons();
   }
 
