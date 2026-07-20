@@ -114,19 +114,21 @@
       card.append(title, detail);
       els.summary.appendChild(card);
     });
+    var hasValidationFailure = state.items.some(function (item) { return item.status !== 'valid'; });
+    var isReady = state.items.length && !hasValidationFailure;
     var statusRow = document.createElement('div');
-    statusRow.className = 'mt-4 grid grid-cols-2 gap-3';
-    statusRow.append(createStatusPill('Validated', state.items.length && !state.items.some(function (item) { return item.status !== 'valid'; }) ? 'success' : 'neutral'), createStatusPill('Ready', state.items.length && !state.items.some(function (item) { return item.status !== 'valid'; }) ? 'success' : 'neutral'));
+    statusRow.className = 'mt-4';
+    statusRow.append(createStatusPill(hasValidationFailure ? 'Error' : 'Ready', isReady ? 'success' : hasValidationFailure ? 'error' : 'neutral'));
     els.summary.appendChild(statusRow);
     renderWarnings();
   }
 
   function createStatusPill(label, tone) {
-    var tones = { success: 'border-emerald-300/40 bg-emerald-400/10 text-emerald-200', neutral: 'border-white/15 bg-white/5 text-muted' };
+    var tones = { success: 'border-emerald-300/40 bg-emerald-400/10 text-emerald-200', error: 'border-red-300/40 bg-red-400/10 text-red-200', neutral: 'border-white/15 bg-white/5 text-muted' };
     var pill = document.createElement('div');
     pill.className = 'flex h-11 items-center justify-center rounded-lg border px-4 shadow-sm ' + tones[tone];
     var icon = document.createElement('i');
-    icon.setAttribute('data-lucide', tone === 'success' ? 'check-circle-2' : 'circle-dashed');
+    icon.setAttribute('data-lucide', tone === 'success' ? 'check-circle-2' : tone === 'error' ? 'x-circle' : 'circle-dashed');
     icon.className = 'h-4 w-4 shrink-0';
     var text = document.createElement('span');
     text.className = 'ml-2 text-xs font-extrabold uppercase tracking-wide';
