@@ -6,15 +6,27 @@ Guidelines for AI coding agents working on this repository. Respect these standa
 
 ## 1. Project Identity
 
-Pattens is a **browser‑only toolkit** for email operations. Three tools share one page:
+Pattens is a **browser‑only toolkit** for email operations. Four tools share one page:
 
 | Tool | Namespace | Source |
 |------|-----------|--------|
 | Email Validator | `Pattens.validator` | `src/validator/validator.js` |
 | Dynamics Email Converter | `Pattens.converter` | `app.js` |
 | Generate (campaigns / links / surveys) | `Pattens.generator` | `generate.js` |
+| Logic (country FetchXML) | `Pattens.logic` | `src/logic/logic.js` |
+| Theme toggle | `Pattens.theme` | `src/theme/theme.js` |
 
 **No server, no build step, no framework.** Everything is vanilla JS loaded via `<script>` tags in `index.html`.
+
+### 1.1 Logic Tool Rules
+
+- Use `assets/countries.csv` as the only country master source. Its header must be exactly `nor_countryid,nor_name`.
+- Do not generate FetchXML unless every entered country is valid and unique.
+- Match country input case-, punctuation-, and diacritic-insensitively, but generate with the canonical master-list name and GUID.
+- Verify every master GUID and normalized country name before enabling validation.
+- XML-escape canonical country names and GUIDs before writing FetchXML.
+- Keep the action order **Validate → Generate → Copy**. Only the next available action may use the primary-button treatment.
+- Put Logic loading errors in the bottom of the Logic Summary panel, not near the page footer.
 
 ---
 
@@ -42,7 +54,7 @@ These colors are defined in the Tailwind config inside `index.html` and must not
 - Fonts are loaded from Google Fonts via `<link>` tags
 - Use `font-sans` and `font-mono` Tailwind classes — the custom config maps them correctly
 
-### 2.3 Background & Visual Atmosphere
+### 2.3 Themes, Background & Visual Atmosphere
 
 The site has a **dark, cinematic background** composed of:
 
@@ -53,10 +65,12 @@ The site has a **dark, cinematic background** composed of:
 5. **Bottom gradient** — linear fade from teal to transparent
 
 **Rules:**
-- Never remove or alter the background orbs, their colors, or their animation
+- In dark mode, never remove or alter the background orbs, their colors, or their animation
 - The `background-container` div must remain the first child of `<body>`
 - All tool panels sit on top via `relative z-10`
 - New UI must use `bg-panel` with `backdrop-blur-[18px]` and `border border-line` for cards
+- Preserve the dark/light theme toggle. It is icon-only, placed at the far right of the main navigation, and must retain an accurate `aria-label`.
+- In light mode, keep the existing warm off-white canvas (`#F5F4F1`), white rounded cards, a single accent color, monochrome outlined icons, and no gradients.
 
 ### 2.4 Panel / Card Pattern
 
@@ -76,6 +90,8 @@ Every tool panel follows this exact structure:
 ```
 
 **Reuse this pattern.** Do not invent new panel styles.
+
+Logic input/output panel headers use a `h-14` header for the same vertical rhythm as the main navigation. Keep their content areas padded with `p-4`.
 
 ### 2.5 Button Styles
 
@@ -116,6 +132,7 @@ After DOM changes call `window.lucide.createIcons()` to re-render.
 - **Errors**: `<div id="..." class="hidden rounded-lg border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-100">` — toggle `hidden`
 - Always clear errors before starting a new operation
 - Error messages must be user‑friendly, never expose internals
+- Keep errors inside their associated tool's Summary panel whenever one exists; never render tool errors above the global footer.
 
 ---
 
@@ -134,7 +151,7 @@ These reinforce `.github/copilot-instructions.md`. Critical rules:
 ### 3.2 HTML
 - **Minimal inline `<script>` blocks** — pure logic lives in `src/` files
 - **Tailwind only** for styling — custom CSS only for animations (`@keyframes`), defined inline in `index.html`
-- **`addEventListener`, never `onclick`**
+- **Use `addEventListener` for new controls; do not add new `onclick` attributes.**
 
 ### 3.3 File Placement
 
@@ -166,7 +183,7 @@ These reinforce `.github/copilot-instructions.md`. Critical rules:
 - **Sanitize all user input** — strip `<`, `>`, `"`, `'`, `;`, `\`, newlines, tabs
 - **Never log or store email addresses** — not in `console`, not in `localStorage`, not anywhere
 - **No tracking, no telemetry, no analytics**
-- **No new network requests** — the only fetches are for loading sample files (local) and CDN assets (Tailwind, Lucide, fonts)
+- **No new network requests** — the only fetches are for local bundled assets (including the Logic country CSV), local sample files, and CDN assets (Tailwind, Lucide, fonts)
 - If you add a feature that needs a network call, flag it for review
 
 ---
@@ -175,7 +192,7 @@ These reinforce `.github/copilot-instructions.md`. Critical rules:
 
 1. **Read the relevant docs** in `docs/` (especially `conversion-rules.md` and `dynamics-template-attributes.md` for converter work)
 2. **Check `skills/`** for any agent‑skill definitions that apply
-3. **Run `npm test`** before and after — all 75+ tests must pass
+3. **Run `npm test`** before and after — all tests must pass
 4. **Respect the design system** (section 2 above) — don't invent new colors, panel styles, or button patterns
 5. **Keep the single‑page architecture** — don't add new HTML pages or routing
 

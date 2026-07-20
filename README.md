@@ -2,11 +2,12 @@
 
 PATTENS Email Tools is a browser-based toolkit for working with email lists, email HTML, and campaign assets.
 
-Three tools, one page:
+Four tools, one page:
 
 - **Email Validator** — syntax‑check and deduplicate email addresses
 - **Dynamics Email Converter** — prepare third‑party HTML for Dynamics 365 Customer Insights – Journeys
 - **Generate** — create campaign names, tracked URLs, and encoded survey links
+- **Logic** — validate country names and generate safe Dynamics FetchXML filters
 
 Everything runs locally in your browser — no server, no account, no data leaving your machine.
 
@@ -81,7 +82,22 @@ Generated items persist in your browser's `localStorage` and are restored when y
 
 ---
 
-## One Page, Three Tools
+## Logic
+
+Create a ready-to-paste FetchXML country filter for Dynamics 365.
+
+1. Add country names, one per line.
+2. Select **Validate** to compare them with the bundled master list in `assets/countries.csv`.
+3. Review the counts for **Valid**, **Invalid**, and **Duplicate** entries. The Warnings tab lists invalid names only.
+4. When every entry is valid and unique, select **Generate**, then **Copy**.
+
+The tool does not generate XML when the input contains invalid names or duplicates. Country names are matched case-, punctuation-, and diacritic-insensitively; the generated XML always uses the canonical country name and GUID from the bundled master list. If that master list cannot be loaded, a clear error appears in the Logic Summary panel and generation remains unavailable.
+
+The action buttons follow the required order: **Validate → Generate → Copy**. Only the next available action is highlighted.
+
+---
+
+## One Page, Four Tools
 
 The main page includes a navigation bar to switch between tools:
 
@@ -90,6 +106,7 @@ The main page includes a navigation bar to switch between tools:
 | Generate | Default view |
 | Convert | Dynamics email converter |
 | Validate | Email validator |
+| Logic | Country-to-FetchXML generator |
 
 Switch between them without leaving the page.
 
@@ -108,18 +125,24 @@ All processing happens **client‑side** in your browser. Email addresses, paste
 ```
 ├── index.html              # Single‑page app shell (Tailwind‑styled, imports all tools)
 ├── src/
+│   ├── logic/
+│   │   └── logic.js        # Country validation and FetchXML generation (Pattens.logic)
+│   ├── theme/
+│   │   └── theme.js        # Persistent dark/light theme toggle (Pattens.theme)
 │   ├── validator/
 │   │   └── validator.js    # Email validation logic (Pattens.validator)
-│   ├── app.js              # Dynamics email converter (Pattens.converter)
-│   └── generate.js         # Campaign/link/survey generator (Pattens.generator)
+├── app.js                  # Dynamics email converter (Pattens.converter)
+├── generate.js             # Campaign/link/survey generator (Pattens.generator)
 ├── __tests__/              # Jest tests (mirror src/ structure)
 │   ├── app.test.js         # Converter tests
 │   ├── generator.test.js   # Generator tests
+│   ├── logic.test.js       # Country-list and FetchXML generation tests
+│   ├── theme.test.js       # Theme-toggle tests
 │   └── validator.test.js   # Validator tests (loads real source)
 ├── test-fixtures/          # CSV and HTML fixture files for tests
 ├── docs/                   # Conversion rules, Dynamics attribute docs
 ├── skills/                 # Agent skill definitions
-├── assets/                 # Static assets (SVG logos, etc.)
+├── assets/                 # Static assets, including the country master CSV
 ├── .github/
 │   └── copilot-instructions.md  # Copilot coding guidelines
 ├── package.json
@@ -153,6 +176,8 @@ npm run test:coverage # run tests with coverage report
 | `__tests__/app.test.js` | HTML parsing, block analysis, Dynamics conversion, output validation, utility functions |
 | `__tests__/generator.test.js` | Campaign code building, tracked link generation, survey URL construction, localStorage persistence |
 | `__tests__/validator.test.js` | Email syntax checking, CSV parsing, duplicate detection, sanitization, summary calculations |
+| `__tests__/logic.test.js` | Country master integrity, country matching, duplicate detection, and FetchXML generation |
+| `__tests__/theme.test.js` | Theme persistence and accessible toggle state |
 
 Tests load the **real source files** via `fs.readFileSync` + `(0, eval)(code)` — no function copies are used.
 
@@ -166,6 +191,9 @@ Tests load the **real source files** via `fs.readFileSync` + `(0, eval)(code)` �
 - **Namespaced APIs** — All modules live under `window.Pattens.{module}` to avoid global collisions
 - **Resilient sample loading** — Sample HTML files load with a root‑relative path and a local fallback
 - **Safe iframe sandboxes** — Preview iframes use `sandbox="allow-same-origin"` for consistent rendering
+- **Safe FetchXML generation** — Logic validates master-list headers, GUIDs, duplicate master names, and XML-escapes canonical country names before generating output
+- **Guided action flow** — Logic highlights only the next valid action in the Validate → Generate → Copy sequence
+- **Theme preference** — Dark and light mode are stored locally in your browser
 
 ---
 
