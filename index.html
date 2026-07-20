@@ -298,6 +298,9 @@
             <button id="validatorNav" type="button" data-tool="validator" onclick="emailTools.setActiveTool('validator')" class="tool-nav flex h-9 items-center justify-center rounded-md px-3 text-sm font-bold text-muted transition hover:bg-white/10 hover:text-white">
               Validate
             </button>
+            <button id="logicNav" type="button" data-tool="logic" class="tool-nav flex h-9 items-center justify-center rounded-md px-3 text-sm font-bold text-muted transition hover:bg-white/10 hover:text-white">
+              Logic
+            </button>
           </nav>
           <button id="themeToggle" type="button" aria-pressed="false" class="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-muted transition hover:border-accent hover:text-accent">
             <i data-lucide="sun" class="h-4 w-4"></i>
@@ -357,6 +360,51 @@
             </div>
             <div id="validatorSummaryPanel" class="min-h-0 flex-1 overflow-auto p-4">
               <dl id="validatorSummaryRows" class="grid grid-cols-2 gap-2"></dl>
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      <section id="logicTool" data-tool-panel="logic" class="hidden items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_360px]">
+        <section class="flex min-h-[620px] flex-col overflow-hidden rounded-lg border border-white/15 bg-panel shadow-soft backdrop-blur-[18px]">
+          <div class="flex items-center justify-between gap-3 border-b border-line px-3 py-2">
+            <h2 class="px-2 text-sm font-extrabold text-white">Countries</h2>
+          </div>
+          <textarea id="logicCountryInput" class="min-h-0 flex-1 resize-none bg-black/20 p-4 font-mono text-[13px] leading-5 text-slate-100 outline-none placeholder:text-slate-500" placeholder="Paste countries here, one per line.&#10;&#10;Cook Islands&#10;Cuba&#10;Fiji" spellcheck="false"></textarea>
+        </section>
+
+        <section class="flex min-h-[620px] flex-col overflow-hidden rounded-lg border border-white/15 bg-panel shadow-soft backdrop-blur-[18px]">
+          <div class="flex items-center justify-between gap-3 border-b border-line px-3 py-2">
+            <h2 class="px-2 text-sm font-extrabold text-white">XML</h2>
+          </div>
+          <textarea id="logicXmlOutput" readonly class="min-h-0 flex-1 resize-none bg-black/20 p-4 font-mono text-[13px] leading-5 text-slate-100 outline-none placeholder:text-slate-500" placeholder="Validate countries, then generate FetchXML." aria-label="Generated FetchXML"></textarea>
+        </section>
+
+        <aside class="flex min-h-[620px] flex-col gap-4">
+          <section class="shrink-0 rounded-lg border border-white/15 bg-panel p-4 shadow-soft backdrop-blur-[18px]">
+            <div class="grid grid-cols-2 gap-3">
+              <button id="logicValidateButton" type="button" class="flex h-11 items-center justify-center gap-2 rounded-lg border border-accent bg-accent px-4 text-sm font-bold text-[#061014] shadow-control transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-slate-500 disabled:shadow-none"><i data-lucide="check-circle-2" class="h-4 w-4"></i><span>Validate</span></button>
+              <button id="logicGenerateButton" type="button" disabled class="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-slate-500"><i data-lucide="file-code-2" class="h-4 w-4"></i><span>Generate</span></button>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <button id="logicCopyButton" type="button" disabled class="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-slate-500"><i data-lucide="copy" class="h-4 w-4"></i><span>Copy</span></button>
+              <button id="logicClearButton" type="button" class="flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-accent hover:text-accent"><i data-lucide="trash-2" class="h-4 w-4"></i><span>Clear</span></button>
+            </div>
+          </section>
+          <section class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-white/15 bg-panel shadow-soft backdrop-blur-[18px]">
+            <div class="flex items-center justify-between gap-3 border-b border-line px-3 py-2">
+              <div class="flex items-center gap-1">
+                <button id="logicSummaryTab" type="button" class="logic-detail-tab rounded-md px-3 py-2 text-sm font-bold transition">Summary</button>
+                <button id="logicWarningsTab" type="button" class="logic-detail-tab rounded-md px-3 py-2 text-sm font-bold transition">Warnings</button>
+              </div>
+              <span id="logicWarningCount" class="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-muted shadow-sm">0</span>
+            </div>
+            <div id="logicSummaryPanel" class="min-h-0 flex-1 overflow-auto p-4">
+              <dl id="logicSummaryRows" class="grid gap-2"></dl>
+            </div>
+            <div id="logicWarningsPanel" class="hidden min-h-0 flex-1 overflow-auto p-3">
+              <p id="logicWarningsEmpty" class="px-1 py-2 text-sm font-medium text-muted">No invalid countries detected.</p>
+              <ul id="logicInvalidCountryList" class="hidden space-y-2"></ul>
             </div>
           </section>
         </aside>
@@ -635,6 +683,10 @@
         generate: {
           title: "Generate",
           description: "Create consistent campaign names and links."
+        },
+        logic: {
+          title: "Logic",
+          description: "Validate country names and create FetchXML for Dynamics 365."
         }
       };
 
@@ -908,5 +960,6 @@
     <script src="./app.js?v=20260614-combined"></script>
     <script src="./generate.js?v=20260717-tracking-toggle"></script>
     <script src="./src/theme/theme.js?v=20260717-light-theme"></script>
+    <script src="./src/logic/logic.js?v=20260720-country-logic"></script>
   </body>
 </html>
