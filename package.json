@@ -4,6 +4,7 @@
   "description": "Browser-based email toolkit: validate email lists, convert HTML for Dynamics 365, and generate campaign assets",
   "main": "index.html",
   "scripts": {
+    "build": "node scripts/build-site.js",
     "dev": "python3 -m http.server 3001",
     "test": "jest",
     "test:watch": "jest --watch",
