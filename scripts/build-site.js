@@ -3,6 +3,7 @@ var path = require('path');
 
 var projectRoot = path.resolve(__dirname, '..');
 var distRoot = path.join(projectRoot, 'dist');
+var staticRoot = path.join(distRoot, 'assets');
 var assetMap = {};
 var contentTypeMap = {
   '.csv': 'text/csv; charset=utf-8',
@@ -27,10 +28,11 @@ function addAssets(directory, prefix) {
 fs.rmSync(distRoot, { recursive: true, force: true });
 fs.mkdirSync(path.join(distRoot, 'server'), { recursive: true });
 fs.mkdirSync(path.join(distRoot, '.openai'), { recursive: true });
+fs.mkdirSync(staticRoot, { recursive: true });
 
 ['index.html', 'app.js', 'generate.js', 'src', 'assets'].forEach(function (entry) {
   var source = path.join(projectRoot, entry);
-  var destination = path.join(distRoot, entry);
+  var destination = path.join(staticRoot, entry);
   fs.cpSync(source, destination, { recursive: true });
 });
 
