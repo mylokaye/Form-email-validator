@@ -49,7 +49,7 @@ fs.writeFileSync(
   "var assets = " + JSON.stringify(assetMap) + ";\n" +
   "var contentTypes = " + JSON.stringify(contentTypeMap) + ";\n" +
   "function decode(value) { var binary = atob(value); var bytes = new Uint8Array(binary.length); for (var i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i); return bytes; }\n" +
-  "export default { async fetch(request) { var pathname = new URL(request.url).pathname; var asset = assets[pathname]; if (!asset) return new Response('Not found', { status: 404 }); var extension = pathname.slice(pathname.lastIndexOf('.')); return new Response(decode(asset), { headers: { 'content-type': contentTypes[extension] || 'application/octet-stream' } }); } };\n"
+  "export default { async fetch(request) { var pathname = new URL(request.url).pathname; var asset = assets[pathname]; if (!asset) return new Response('Not found', { status: 404 }); var extension = pathname.slice(pathname.lastIndexOf('.')); var contentType = pathname === '/' ? 'text/html; charset=utf-8' : (contentTypes[extension] || 'application/octet-stream'); return new Response(decode(asset), { headers: { 'content-type': contentType } }); } };\n"
 );
 
 fs.copyFileSync(
