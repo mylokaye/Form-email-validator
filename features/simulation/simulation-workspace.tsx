@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Play, RotateCcw, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricTile } from '@/components/ui/metric-tile';
 import { Textarea } from '@/components/ui/textarea';
 
 type Audience = 'Customers' | 'Stakeholders' | 'Public';
@@ -60,13 +61,12 @@ export function SimulationWorkspace() {
     <Card className="min-h-[560px]">
       <CardHeader className="flex flex-row items-center justify-between border-b"><CardTitle>Audience</CardTitle><span className="rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground">{events.length} / {rounds} rounds</span></CardHeader>
       <CardContent className="grid gap-5 pt-5"><div className="grid gap-2"><div className="flex items-center gap-2 text-sm font-medium"><Users className="h-4 w-4" />Personas</div><div className="grid gap-2 md:grid-cols-3">{selectedPersonas.map((persona) => <div key={persona.name} className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 px-3 py-3"><div><p className="text-sm font-medium">{persona.name}</p><p className="text-xs text-muted-foreground">{persona.role}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone[persona.stance]}`}>{persona.stance}</span></div>)}</div></div>
-        <div className="grid gap-2"><p className="text-sm font-medium">Status</p><div className="grid grid-cols-3 gap-3"><Metric label="Progress" value={`${rounds ? Math.round((events.length / rounds) * 100) : 0}%`} /><Metric label="Personas" value={String(selectedPersonas.length)} /><Metric label="Response" value={result ? `${result.sentiment}%` : '—'} /></div></div>
-        <div className="min-h-56 space-y-3">{events.map((event) => <article className="rounded-lg border border-border p-4" key={`${event.round}-${event.author}`}><div className="mb-2 flex items-center justify-between gap-3"><div><span className="mr-2 text-xs font-medium text-muted-foreground">ROUND {event.round}</span><span className="text-sm font-semibold">{event.author}</span></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone[event.sentiment]}`}>{event.sentiment}</span></div><p className="text-sm leading-6 text-muted-foreground">{event.text}</p></article>)}</div>
+        <div className="grid gap-2"><p className="text-sm font-medium">Status</p><div className="grid grid-cols-3 gap-3"><MetricTile label="Progress" value={`${rounds ? Math.round((events.length / rounds) * 100) : 0}%`} /><MetricTile label="Personas" value={String(selectedPersonas.length)} /><MetricTile label="Response" value={result ? `${result.sentiment}%` : '—'} /></div></div>
+        <div className="min-h-56 space-y-3">{events.length ? events.map((event) => <article className="rounded-lg border border-border p-4" key={`${event.round}-${event.author}`}><div className="mb-2 flex items-center justify-between gap-3"><div><span className="mr-2 text-xs font-medium text-muted-foreground">ROUND {event.round}</span><span className="text-sm font-semibold">{event.author}</span></div><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone[event.sentiment]}`}>{event.sentiment}</span></div><p className="text-sm leading-6 text-muted-foreground">{event.text}</p></article>) : <div className="flex min-h-56 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">No audience response yet.</div>}</div>
         {result && <div className="grid gap-3 border-t pt-5"><p className="text-sm font-semibold">Response</p><ResultBlock label="Overall response" value={result.overallResponse} /><ResultBlock label="Key concerns" value={result.keyConcerns.join(' · ')} /><ResultBlock label="Recommended next step" value={result.recommendedNextStep} /></div>}
       </CardContent>
     </Card>
   </div>;
 }
 
-function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border border-border bg-secondary/30 px-3 py-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-lg font-semibold">{value}</p></div>; }
 function ResultBlock({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border border-border bg-secondary/30 p-3"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-sm leading-6">{value}</p></div>; }

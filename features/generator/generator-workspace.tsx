@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, Link2, RotateCcw } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader } from "../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { FloatingField as Field } from "../../components/ui/floating-field";
 import {
   buildCampaignCode,
@@ -94,8 +94,7 @@ export function GeneratorWorkspace() {
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div
+          <CardHeader className="border-b"><CardTitle>Generate</CardTitle><div
               className="flex flex-wrap gap-2 sm:col-span-2"
               role="tablist"
               aria-label="Generator type"
@@ -109,6 +108,7 @@ export function GeneratorWorkspace() {
                   role="tab"
                   aria-selected={mode === item}
                   onClick={() => setMode(item)}
+                  className="h-8 px-3"
                 >
                   {item === "link"
                     ? "URL"
@@ -117,7 +117,8 @@ export function GeneratorWorkspace() {
                       : "Survey"}
                 </Button>
               ))}
-            </div>
+            </div></CardHeader>
+          <CardContent className="grid gap-4 pt-4 sm:grid-cols-2">
             {mode === "link" && (
               <>
                 <div className="sm:col-span-2">
@@ -253,9 +254,10 @@ export function GeneratorWorkspace() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-1">
+          <CardHeader className="border-b"><CardTitle>Output</CardTitle></CardHeader>
+          <CardContent className="pt-4">
             <output
-              className="block min-h-28 break-all rounded-lg bg-secondary p-3 font-mono text-xs leading-5"
+              className="block min-h-28 break-all rounded-lg border border-dashed border-border bg-secondary/40 p-3 font-mono text-xs leading-5"
               aria-live="polite"
             >
               {output}

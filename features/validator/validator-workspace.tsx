@@ -4,6 +4,7 @@ import { ChangeEvent, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Download, RotateCcw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricTile } from '@/components/ui/metric-tile';
 import { Textarea } from '@/components/ui/textarea';
 import {
   escapeCsvField,
@@ -154,7 +155,7 @@ export function ValidatorWorkspace() {
           <CardTitle>Emails</CardTitle>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">{emailCount} found</span>
-            <Button type="button" variant="ghost" size="sm" onClick={loadSample}>Sample</Button>
+            <Button type="button" variant="ghost" size="sm" className="h-8 px-3" onClick={loadSample}>Sample</Button>
           </div>
         </CardHeader>
         <CardContent className="flex flex-1 pt-4">
@@ -170,6 +171,7 @@ export function ValidatorWorkspace() {
 
       <div className="grid gap-6">
         <Card>
+          <CardHeader className="border-b"><CardTitle>Actions</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 pt-4">
             <Button type="button" onClick={() => void validate()}><CheckCircle2 className="h-4 w-4" />Validate</Button>
             <Button type="button" variant="secondary" onClick={() => fileInput.current?.click()}><Upload className="h-4 w-4" />Upload</Button>
@@ -184,12 +186,7 @@ export function ValidatorWorkspace() {
           <CardHeader className="border-b"><CardTitle>Summary</CardTitle></CardHeader>
           <CardContent className="pt-4">
             <dl className="grid grid-cols-2 gap-3">
-              {metrics.map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-secondary/40 px-4 py-4">
-                  <dt className="text-sm text-muted-foreground">{label}</dt>
-                  <dd className="text-base font-semibold">{value}</dd>
-                </div>
-              ))}
+              {metrics.map(([label, value]) => <MetricTile key={label} label={label} value={value} />)}
             </dl>
             {error && <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{error}</div>}
           </CardContent>

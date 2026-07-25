@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Copy, FileCode2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricTile } from '@/components/ui/metric-tile';
 import { Textarea } from '@/components/ui/textarea';
 import {
   buildFetchXml,
@@ -134,7 +135,7 @@ export function LogicWorkspace() {
         <CardHeader className="flex flex-row items-center justify-between gap-3 border-b">
           <CardTitle>{mode === 'country' ? 'Countries' : 'States'}</CardTitle>
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="Logic type">
-            {(['country', 'state'] as const).map((item) => <Button key={item} type="button" size="sm" variant={mode === item ? 'default' : 'secondary'} role="tab" aria-selected={mode === item} onClick={() => { setMode(item); setInput(''); setError(''); resetResults(); }}>{item === 'country' ? 'Country' : 'State'}</Button>)}
+            {(['country', 'state'] as const).map((item) => <Button key={item} type="button" size="sm" className="h-8 px-3" variant={mode === item ? 'default' : 'secondary'} role="tab" aria-selected={mode === item} onClick={() => { setMode(item); setInput(''); setError(''); resetResults(); }}>{item === 'country' ? 'Country' : 'State'}</Button>)}
           </div>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col gap-4 pt-4">
@@ -153,7 +154,7 @@ export function LogicWorkspace() {
       </Card>
 
       <Card className="min-h-[520px]">
-        <CardHeader className="border-b"><CardTitle>XML</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center border-b"><CardTitle>XML</CardTitle></CardHeader>
         <CardContent className="flex flex-1 flex-col gap-4 pt-4">
           <Textarea aria-label="Generated FetchXML" className="min-h-[355px] flex-1 resize-none p-4 font-mono text-xs leading-5" readOnly value={xml} />
           <div className="flex flex-wrap gap-3">
@@ -168,10 +169,7 @@ export function LogicWorkspace() {
         <CardContent className="pt-4">
           <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {summary.map(([label, value]) => (
-              <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-secondary/40 px-4 py-4">
-                <dt className="text-sm text-muted-foreground">{label}</dt>
-                <dd className="text-base font-semibold">{value}</dd>
-              </div>
+              <MetricTile key={label} label={label} value={value} />
             ))}
           </dl>
           {warnings.length > 0 && (
