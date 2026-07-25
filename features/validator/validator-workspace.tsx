@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   escapeCsvField,
   extractEmailsFromText,
+  getEmailDomain,
   MAX_EMAILS,
   MAX_FILE_SIZE,
   type EmailResult,
@@ -22,6 +23,7 @@ const emptySummary: ValidationSummary = {
   invalid: 0,
   duplicate: 0,
   validRate: 0,
+  mxValidated: 0,
 };
 
 const sampleEmails = [
@@ -35,6 +37,7 @@ const sampleEmails = [
 
 export function ValidatorWorkspace() {
   const fileInput = useRef<HTMLInputElement>(null);
+  const validationRequest = useRef(0);
   const [input, setInput] = useState('');
   const [results, setResults] = useState<EmailResult[]>([]);
   const [summary, setSummary] = useState<ValidationSummary>(emptySummary);
@@ -42,7 +45,7 @@ export function ValidatorWorkspace() {
   const [status, setStatus] = useState('');
   const emailCount = useMemo(() => extractEmailsFromText(input).length, [input]);
 
-  const validate = (value = input) => {
+  const validate = async (value = input) => {
     setError('');
     const emails = extractEmailsFromText(value);
     if (!emails.length) {
@@ -57,6 +60,32 @@ export function ValidatorWorkspace() {
     const next = validateEmails(emails);
     setResults(next.emails);
     setSummary(next.summary);
+    const requestId = validationRequest.current + 1;
+    validationRequest.current = requestId;
+    const domains = [...new Set(next.emails.filter(({ status: resultStatus }) => resultStatus === 'Valid').map(({ email }) => getEmailDomain(email)))];
+    if (!domains.length) return;
+
+    setStatus('Checking MX records...');
+    try {
+      const lookups = await Promise.all(
+        domains.map(async (domain) => {
+          const response = await fetch(`/api/mx?domain=${encodeURIComponent(domain)}`);
+          if (!response.ok) throw new Error('MX lookup failed.');
+          const result = (await response.json()) as { domain: string; hasMx: boolean };
+          return result;
+        }),
+      );
+      if (validationRequest.current !== requestId) return;
+      const mxDomains = new Set(lookups.filter(({ hasMx }) => hasMx).map(({ domain }) => domain));
+      setSummary({
+        ...next.summary,
+        mxValidated: next.emails.filter(({ email, status: resultStatus }) => resultStatus === 'Valid' && mxDomains.has(getEmailDomain(email))).length,
+      });
+    } catch {
+      if (validationRequest.current === requestId) setError('MX records could not be checked. Syntax and duplicate results are still available.');
+    } finally {
+      if (validationRequest.current === requestId) setStatus('');
+    }
   };
 
   const loadSample = () => {
@@ -74,7 +103,7 @@ export function ValidatorWorkspace() {
       if (file.size > MAX_FILE_SIZE) throw new Error('File too large. Maximum size is 5MB.');
       const text = await file.text();
       setInput(text);
-      validate(text);
+      await validate(text);
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Unable to read the selected file.');
     } finally {
@@ -84,6 +113,7 @@ export function ValidatorWorkspace() {
   };
 
   const clear = () => {
+    validationRequest.current += 1;
     setInput('');
     setResults([]);
     setSummary(emptySummary);
@@ -110,6 +140,7 @@ export function ValidatorWorkspace() {
     ['Health', `${summary.validRate}%`],
     ['Duplicates', String(summary.duplicate)],
     ['Invalid', String(summary.invalid)],
+    ['MX Validated', String(summary.mxValidated)],
   ];
 
   return (
@@ -136,7 +167,7 @@ export function ValidatorWorkspace() {
       <div className="grid gap-6">
         <Card>
           <CardContent className="grid grid-cols-2 gap-3 pt-4">
-            <Button type="button" onClick={() => validate()}><CheckCircle2 className="h-4 w-4" />Validate</Button>
+            <Button type="button" onClick={() => void validate()}><CheckCircle2 className="h-4 w-4" />Validate</Button>
             <Button type="button" variant="secondary" onClick={() => fileInput.current?.click()}><Upload className="h-4 w-4" />Upload</Button>
             <Button type="button" variant="secondary" disabled={!results.length} onClick={download}><Download className="h-4 w-4" />CSV</Button>
             <Button type="button" variant="secondary" onClick={clear}><RotateCcw className="h-4 w-4" />Clear</Button>

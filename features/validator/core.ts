@@ -18,6 +18,7 @@ export type ValidationSummary = {
   invalid: number;
   duplicate: number;
   validRate: number;
+  mxValidated: number;
 };
 
 export function sanitizeEmail(email: unknown) {
@@ -43,6 +44,10 @@ export function isValidEmailSyntax(email: unknown) {
   const labels = domainPart.split('.');
   if (labels.some((label) => !label || label.startsWith('-') || label.endsWith('-'))) return false;
   return /^[a-zA-Z]{2,63}$/.test(labels.at(-1) ?? '');
+}
+
+export function getEmailDomain(email: string) {
+  return email.slice(email.lastIndexOf('@') + 1).toLowerCase();
 }
 
 export function parseCsv(text: string) {
@@ -120,6 +125,7 @@ export function validateEmails(emails: string[]) {
       invalid,
       duplicate,
       validRate: checked ? Math.round((valid / checked) * 100) : 0,
+      mxValidated: 0,
     } satisfies ValidationSummary,
     emails: results,
   };
