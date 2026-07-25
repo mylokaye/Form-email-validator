@@ -67,7 +67,7 @@ export function ValidatorWorkspace() {
 
     setStatus('Checking MX records...');
     try {
-      const lookups = await Promise.all(
+      const lookupResults = await Promise.allSettled(
         domains.map(async (domain) => {
           const response = await fetch(`/api/mx?domain=${encodeURIComponent(domain)}`);
           if (!response.ok) throw new Error('MX lookup failed.');
@@ -76,6 +76,10 @@ export function ValidatorWorkspace() {
         }),
       );
       if (validationRequest.current !== requestId) return;
+      const lookups = lookupResults
+        .filter((lookup): lookup is PromiseFulfilledResult<{ domain: string; hasMx: boolean }> => lookup.status === 'fulfilled')
+        .map(({ value: lookup }) => lookup);
+      if (!lookups.length) throw new Error('MX lookup failed.');
       const mxDomains = new Set(lookups.filter(({ hasMx }) => hasMx).map(({ domain }) => domain));
       setSummary({
         ...next.summary,
