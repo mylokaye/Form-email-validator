@@ -5,7 +5,12 @@ import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-export const metadata: Metadata = { title: 'Pattens — Campaign operations', description: 'A browser-first workspace for campaign operations.' };
+export const metadata: Metadata = {
+  title: 'Pattens — Campaign operations',
+  description: 'A browser-first workspace for campaign operations.',
+  icons: { icon: '/crm-logo.png', apple: '/crm-logo.png' },
+  openGraph: { images: ['/crm-logo.png'] },
+};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}><body>{children}</body></html>;
