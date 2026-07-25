@@ -31,10 +31,21 @@ npm run build
 
 - `app/` — Next.js routes and layout.
 - `features/` — Tool-specific UI and browser logic.
-- `components/` — Shared shell and UI components.
+- `components/` — Shared shell, UI components, and visual primitives.
 - `assets/` — Country and state data masters used by Logic.
 - `scripts/build-site.js` — Static export and hosted worker build.
 - `Archive/` — Retained legacy static implementation, converter reference material, archived tests, and unused UI components.
+
+## Interface standards
+
+- Tool workspaces use a responsive two-column grid that collapses to one column on narrower screens.
+- Feature-card headers are 40px horizontal rows, with the title on the left and any metadata, tabs, or compact controls aligned on the right.
+- Form fields and normal action buttons are 50px high. Compact controls in card headers are 32px high.
+- Text inputs use the floating-label field pattern. Selects retain a fixed label above the control.
+- Card bodies use 16px padding, related controls use 16px gaps, and major panels use 24px gaps.
+- Reuse `MetricTile` for compact status and summary values rather than creating feature-specific metric cards.
+- Empty output areas are quiet, bordered states. The Generate output stays text-free until an asset has been created.
+- `public/crm-logo.png` is the shared Pattens brand asset for the header, favicon, and social metadata.
 
 ## Privacy
 

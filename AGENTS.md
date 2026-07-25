@@ -16,9 +16,15 @@
 
 ## UX
 
-- Reuse the established components in `components/ui`, especially `floating-field.tsx` for form fields.
-- Inputs are 50px high and labels float into the border on focus or when filled.
+- Reuse the established components in `components/ui`, especially `floating-field.tsx` and `metric-tile.tsx`, for form fields and status values.
+- Feature cards use the shared `CardHeader`: a 40px horizontal row with the title on the left and optional metadata, tabs, or controls on the right. Do not introduce vertical header layouts or override this rhythm.
+- Header controls and tabs use `h-8 px-3`. Form fields and normal action buttons are 50px high.
+- Text inputs use floating labels: the label sits inside an empty field and moves into the border on focus or when filled. Selects retain a fixed label above the control.
+- Use 16px card-body padding and related-control gaps; use 24px gaps between major panels.
+- Use `MetricTile` for compact summary and status values rather than feature-specific stat-card styles.
+- Keep empty output areas quiet and bordered. Do not add instructional placeholder copy to the Generate output until an asset exists.
 - Preserve the warm-neutral workspace, responsive two-column tool layout, and full-width bottom footer.
+- Use `public/crm-logo.png` for Pattens branding, including the header, favicon, and social metadata.
 - Use concise, singular button labels.
 - Simulation must remain a responsive two-column setup-and-debate workspace. Keep its audience panel, debate timeline, and final response visible as separate states.
 
