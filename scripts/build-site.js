@@ -30,6 +30,7 @@ var nextBuild = childProcess.spawnSync(process.platform === 'win32' ? 'npx.cmd' 
 if (nextBuild.status !== 0) process.exit(nextBuild.status || 1);
 
 fs.copyFileSync(path.join(projectRoot, 'assets', 'countries.csv'), path.join(outputRoot, 'countries.csv'));
+fs.copyFileSync(path.join(projectRoot, 'assets', 'states.csv'), path.join(outputRoot, 'states.csv'));
 fs.rmSync(distRoot, { recursive: true, force: true });
 fs.mkdirSync(path.join(distRoot, 'server'), { recursive: true });
 fs.mkdirSync(path.join(distRoot, '.openai'), { recursive: true });
