@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronDown, Command, GitBranch, Link2, Moon, PanelLeft, Sun, WandSparkles } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Command, GitBranch, Link2, MessagesSquare, Moon, PanelLeft, Sun, WandSparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Separator } from './ui/separator';
@@ -14,6 +14,7 @@ const tools = [
   { href: '/convert/', label: 'Convert', icon: GitBranch },
   { href: '/validate/', label: 'Validate', icon: CheckCircle2 },
   { href: '/logic/', label: 'Logic', icon: Link2 },
+  { href: '/simulation/', label: 'Simulation', icon: MessagesSquare },
 ];
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
