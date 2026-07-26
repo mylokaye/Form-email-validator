@@ -1,4 +1,5 @@
-export const MAX_FILE_SIZE = 5 * 1024 * 1024;
+export const MAX_FILE_SIZE = 1024 * 1024;
+export const MAX_INPUT_LENGTH = MAX_FILE_SIZE;
 export const MAX_EMAILS = 300;
 export const MAX_EMAIL_LENGTH = 254;
 export const MAX_LOCAL_PART_LENGTH = 64;
@@ -133,5 +134,6 @@ export function validateEmails(emails: string[]) {
 
 export function escapeCsvField(field: unknown) {
   const value = String(field ?? '');
-  return /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+  const protectedValue = /^[=+\-@\t\r\n]/.test(value) ? `\t${value}` : value;
+  return `"${protectedValue.replaceAll('"', '""')}"`;
 }

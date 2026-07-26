@@ -25,7 +25,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "group/card-header @container/card-header flex h-10 min-h-10 items-center justify-between gap-3 rounded-t-xl px-(--card-spacing) py-0",
+        "group/card-header @container/card-header flex h-11 min-h-11 items-center justify-between gap-3 rounded-t-xl px-(--card-spacing) pt-0 pb-1",
         className
       )}
       {...props}

@@ -20,6 +20,11 @@ const personas: Record<Audience, Persona[]> = {
 };
 
 const tone = { Positive: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300', Mixed: 'bg-amber-500/15 text-amber-700 dark:text-amber-300', Critical: 'bg-red-500/15 text-red-700 dark:text-red-300' };
+const durationOptions = [
+  { rounds: 1, label: '1 hour' },
+  { rounds: 6, label: '6 hours' },
+  { rounds: 24, label: '24 hours' },
+];
 
 export function SimulationWorkspace() {
   const [proposal, setProposal] = useState('');
@@ -53,7 +58,20 @@ export function SimulationWorkspace() {
       <CardHeader className="border-b"><CardTitle>Proposal</CardTitle></CardHeader>
       <CardContent className="grid gap-5 pt-5">
         <Textarea value={proposal} onChange={(event) => { setProposal(event.target.value); setError(''); }} placeholder="Describe the proposal you want to test with an audience." className="min-h-36 resize-y" maxLength={3000} />
-        <div className="grid grid-cols-2 gap-4"><label className="grid gap-2 text-sm font-medium">Duration<select className="h-[50px] rounded-lg border border-input bg-background px-3 text-sm" value={rounds} onChange={(event) => { setRounds(Number(event.target.value)); reset(); }} disabled={running}><option value={1}>1 hour</option><option value={6}>6 hours</option><option value={24}>24 hours</option></select></label><label className="grid gap-2 text-sm font-medium">Audience<select className="h-[50px] rounded-lg border border-input bg-background px-3 text-sm" value={audience} onChange={(event) => { setAudience(event.target.value as Audience); reset(); }} disabled={running}>{Object.keys(personas).map((item) => <option key={item}>{item}</option>)}</select></label></div>
+        <div className="grid gap-4">
+          <fieldset className="grid gap-2" disabled={running}>
+            <legend className="text-sm font-medium">Duration</legend>
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Duration">
+              {durationOptions.map((option) => <Button key={option.rounds} type="button" variant={rounds === option.rounds ? 'secondary' : 'outline'} className="min-w-0 px-2" aria-pressed={rounds === option.rounds} onClick={() => { setRounds(option.rounds); reset(); }}>{option.label}</Button>)}
+            </div>
+          </fieldset>
+          <fieldset className="grid gap-2" disabled={running}>
+            <legend className="text-sm font-medium">Audience</legend>
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Audience">
+              {Object.keys(personas).map((item) => <Button key={item} type="button" variant={audience === item ? 'secondary' : 'outline'} className="min-w-0 px-2 text-xs" aria-pressed={audience === item} onClick={() => { setAudience(item as Audience); reset(); }}>{item}</Button>)}
+            </div>
+          </fieldset>
+        </div>
         <div className="flex gap-3"><Button type="button" onClick={() => void run()} disabled={running} className="h-[50px] flex-1"><Play className="h-4 w-4" />{running ? `Running ${events.length}/${rounds}` : 'Run'}</Button><Button type="button" variant="secondary" className="h-[50px]" onClick={reset} disabled={running}><RotateCcw className="h-4 w-4" />Clear</Button></div>
         {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>}
       </CardContent>
