@@ -17,7 +17,7 @@ import {
 } from "./core";
 
 const emptyLink: LinkValues = {
-  baseUrl: "",
+  baseUrl: "http://google.com",
   trackingType: "MTM",
   source: "",
   medium: "",
@@ -123,7 +123,7 @@ export function GeneratorWorkspace() {
               <>
                 <div className="sm:col-span-2">
                   <Field
-                    label="Base URL"
+                    label="URL"
                     value={link.baseUrl}
                     onChange={(value) => linkSet("baseUrl", value)}
                   />
@@ -214,7 +214,7 @@ export function GeneratorWorkspace() {
               <>
                 <div className="sm:col-span-2">
                   <Field
-                    label="Survey base URL"
+                    label="URL"
                     value={survey.baseUrl}
                     onChange={(value) => surveySet("baseUrl", value)}
                   />
