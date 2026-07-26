@@ -8,6 +8,7 @@ Pattens is a privacy-focused campaign-operations toolkit built with Next.js, Typ
 - **Validate** — Check email syntax, duplicates, and domain MX availability; export results as CSV.
 - **Logic** — Generate Dynamics FetchXML from validated country or state lists. Ambiguous state names are flagged and cannot be generated.
 - **Simulation** — Test a proposal with a defined audience panel and review a simulated round-by-round debate, key concerns, and a recommended next step.
+- **Studio** — Turn screenshots into polished 3D browser mockups with a local WebGL canvas, camera controls, colour gradients, and PNG export.
 - **Convert** — Reserved for the Dynamics email converter migration.
 
 ## Run locally

@@ -27,6 +27,7 @@
 - Use `public/crm-logo.png` for Pattens branding, including the header, favicon, and social metadata.
 - Use concise, singular button labels.
 - Simulation must remain a responsive two-column setup-and-debate workspace. Keep its audience panel, debate timeline, and final response visible as separate states.
+- Studio is browser-only: uploaded screenshots, renderer settings, and exported PNGs stay on the device. Its Three.js/WebGL scene must keep all rendering local, with no image upload or remote texture requests. Keep it limited to browser frames and static PNG export unless a later specification expands it.
 
 ## Validation
 
