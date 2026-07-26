@@ -5,6 +5,7 @@ import { CheckCircle2, Download, RotateCcw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricTile } from '@/components/ui/metric-tile';
+import { useErrorNotification } from '@/components/ui/sonner';
 import { Textarea } from '@/components/ui/textarea';
 import {
   escapeCsvField,
@@ -84,6 +85,7 @@ export function ValidatorWorkspace() {
   const [summary, setSummary] = useState<ValidationSummary>(emptySummary);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  useErrorNotification(error, 'validator-error');
   const validate = async (value = input) => {
     mxAbort.current?.abort();
     mxAbort.current = null;
@@ -185,11 +187,10 @@ export function ValidatorWorkspace() {
   };
 
   const metrics = [
-    ['Valid', String(summary.valid)],
-    ['Health', `${summary.validRate}%`],
-    ['Duplicates', String(summary.duplicate)],
-    ['Invalid', String(summary.invalid)],
-    ['MX Validated', String(summary.mxValidated)],
+    { label: 'Syntax validated', value: String(summary.valid), className: 'border-emerald-500/20 bg-emerald-500/10' },
+    { label: 'Domain validated', value: String(summary.mxValidated), className: 'border-emerald-500/20 bg-emerald-500/10' },
+    { label: 'Duplicates', value: String(summary.duplicate), className: 'border-amber-500/20 bg-amber-500/10' },
+    { label: 'Invalid', value: String(summary.invalid), className: 'border-red-500/20 bg-red-500/10' },
   ];
 
   return (
@@ -216,14 +217,14 @@ export function ValidatorWorkspace() {
       <div className="grid gap-6 lg:h-full lg:grid-rows-[auto_1fr]">
         <Card>
           <CardHeader className="border-b"><CardTitle>Actions</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 gap-3 pt-4">
-            <Button type="button" onClick={() => void validate()}><CheckCircle2 className="h-4 w-4" />Validate</Button>
-            <Button type="button" variant="secondary" onClick={() => fileInput.current?.click()}><Upload className="h-4 w-4" />Upload</Button>
-            <Button type="button" variant="secondary" disabled={!results.length} onClick={download}><Download className="h-4 w-4" />CSV</Button>
-            <Button type="button" variant="secondary" onClick={clear}><RotateCcw className="h-4 w-4" />Clear</Button>
+          <CardContent className="flex flex-wrap items-center gap-3 pt-4">
+            <Button type="button" className="min-w-32 flex-1" onClick={() => void validate()}><CheckCircle2 className="h-4 w-4" />Validate</Button>
+            <Button type="button" variant="secondary" className="min-w-28" onClick={() => fileInput.current?.click()}><Upload className="h-4 w-4" />Upload</Button>
+            <Button type="button" variant="secondary" className="min-w-20" disabled={!results.length} onClick={download}><Download className="h-4 w-4" />CSV</Button>
+            <Button type="button" variant="secondary" size="sm" className="h-10 px-3" onClick={clear}><RotateCcw className="h-4 w-4" />Reset</Button>
             <input ref={fileInput} className="hidden" type="file" accept=".csv,text/csv" onChange={upload} />
-            <p className="col-span-2 text-xs text-muted-foreground">MX checks send valid domains only; email addresses stay in your browser.</p>
-            {status && <p className="col-span-2 text-xs text-muted-foreground" role="status">{status}</p>}
+            <p className="w-full text-xs text-muted-foreground">MX checks send valid domains only; email addresses stay in your browser.</p>
+            {status && <p className="w-full text-xs text-muted-foreground" role="status">{status}</p>}
           </CardContent>
         </Card>
 
@@ -231,9 +232,8 @@ export function ValidatorWorkspace() {
           <CardHeader className="border-b"><CardTitle>Summary</CardTitle></CardHeader>
           <CardContent className="pt-4">
             <dl className="grid grid-cols-2 gap-3">
-              {metrics.map(([label, value]) => <MetricTile key={label} label={label} value={value} />)}
+              {metrics.map((metric) => <MetricTile key={metric.label} {...metric} />)}
             </dl>
-            {error && <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{error}</div>}
           </CardContent>
         </Card>
       </div>

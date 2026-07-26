@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: 'Pattens — Campaign operations',
+  title: 'Pattens',
   description: 'A browser-first workspace for campaign operations.',
   icons: { icon: '/crm-logo.png', apple: '/crm-logo.png' },
   openGraph: { images: ['/crm-logo.png'] },

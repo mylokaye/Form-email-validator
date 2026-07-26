@@ -17,7 +17,6 @@ type StudioSettings = {
   preset: Preset;
   padding: number;
   radius: number;
-  zoom: number;
   panX: number;
   panY: number;
   tiltX: number;
@@ -35,7 +34,6 @@ const heroPreset = {
   tiltY: 0,
   roll: 0,
   fov: 45,
-  zoom: 1,
   panX: 0,
   panY: 0,
 };
@@ -43,8 +41,7 @@ const angledPreset = {
   tiltX: -12,
   tiltY: -13,
   roll: -3,
-  fov: 45,
-  zoom: 2.31,
+  fov: 20,
   panX: 0.37,
   panY: -0.15,
 };
@@ -65,7 +62,6 @@ function savedSettings(): StudioSettings {
   if (typeof window === 'undefined') return defaults;
   try {
     const stored = JSON.parse(localStorage.getItem(storageKey) ?? '{}');
-    if (typeof stored.zoom === 'number' && stored.zoom > 10) stored.zoom /= 100;
     return { ...defaults, ...stored };
   } catch {
     return defaults;
@@ -187,7 +183,7 @@ function renderWebGLScene(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasEleme
   backdrop.position.z = -8;
   scene.add(backdrop);
 
-  camera.position.set(settings.panX, -settings.panY, 8 / settings.zoom);
+  camera.position.set(settings.panX, -settings.panY, 8);
   camera.lookAt(0, 0, 0);
   renderer.render(scene, camera);
   disposeScene(scene);
@@ -233,7 +229,7 @@ export function StudioWorkspace() {
     image.src = source;
   }, [settings, source]);
 
-  const update = <Key extends keyof StudioSettings>(key: Key, value: StudioSettings[Key]) => setSettings((current) => ({ ...current, [key]: value, ...(['tiltX', 'tiltY', 'roll', 'fov', 'zoom', 'panX', 'panY'].includes(key) ? { preset: 'custom' as Preset } : {}) }));
+  const update = <Key extends keyof StudioSettings>(key: Key, value: StudioSettings[Key]) => setSettings((current) => ({ ...current, [key]: value, ...(['tiltX', 'tiltY', 'roll', 'fov', 'panX', 'panY'].includes(key) ? { preset: 'custom' as Preset } : {}) }));
   const applyPreset = (preset: Preset) => setSettings((current) => preset === 'hero' ? { ...current, ...heroPreset, preset } : preset === 'angled' ? { ...current, ...angledPreset, preset } : { ...current, preset });
   const loadFile = (file: Blob | undefined) => {
     if (!file) return;
@@ -318,11 +314,10 @@ export function StudioWorkspace() {
           </div>
         </div>
         <div className="grid gap-3">
-          <CameraControl label="Object X" value={settings.tiltX} min={-70} max={70} format={(value) => value.toFixed(0)} onChange={(value) => update('tiltX', value)} />
-          <CameraControl label="Object Y" value={settings.tiltY} min={-60} max={60} format={(value) => value.toFixed(0)} onChange={(value) => update('tiltY', value)} />
-          <CameraControl label="Roll" value={settings.roll} min={-180} max={180} format={(value) => value.toFixed(0)} onChange={(value) => update('roll', value)} />
-          <CameraControl label="FOV" value={settings.fov} min={10} max={100} format={(value) => value.toFixed(0)} onChange={(value) => update('fov', value)} />
-          <CameraControl label="Zoom" value={settings.zoom} min={0.5} max={10} step={0.01} format={(value) => value.toFixed(2)} onChange={(value) => update('zoom', value)} />
+          <CameraControl stacked label="Object X" value={settings.tiltX} min={-70} max={70} format={(value) => value.toFixed(0)} onChange={(value) => update('tiltX', value)} />
+          <CameraControl stacked label="Object Y" value={settings.tiltY} min={-60} max={60} format={(value) => value.toFixed(0)} onChange={(value) => update('tiltY', value)} />
+          <CameraControl stacked label="Roll" value={settings.roll} min={-180} max={180} format={(value) => value.toFixed(0)} onChange={(value) => update('roll', value)} />
+          <CameraControl stacked label="FOV" value={settings.fov} min={10} max={100} format={(value) => value.toFixed(0)} onChange={(value) => update('fov', value)} />
         </div>
         <Accordion>
           <AccordionItem value="advanced" className="not-last:border-b-0">
@@ -366,8 +361,10 @@ function ControlRange({ label, value, min, max, suffix, onChange }: { label: str
   return <label className="grid gap-2 text-sm font-medium"><span className="flex items-center justify-between gap-2"><span>{label}</span><span className="text-xs font-normal text-muted-foreground">{value}{suffix}</span></span><input className="h-[50px] w-full cursor-ew-resize accent-primary" type="range" min={min} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 }
 
-function CameraControl({ label, value, min, max, step = 1, format, onChange }: { label: string; value: number; min: number; max: number; step?: number; format: (value: number) => string; onChange: (value: number) => void }) {
-  return <label className="grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)_3.75rem] items-center gap-2"><span className="min-w-0 truncate text-xs font-medium uppercase tracking-[0.14em]">{label}</span><input className="h-[50px] w-full cursor-ew-resize accent-primary" type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /><output className="flex h-[50px] items-center justify-end rounded-lg bg-secondary/60 px-2 font-mono text-sm text-muted-foreground">{format(value)}</output></label>;
+function CameraControl({ label, value, min, max, step = 1, format, onChange, stacked = false }: { label: string; value: number; min: number; max: number; step?: number; format: (value: number) => string; onChange: (value: number) => void; stacked?: boolean }) {
+  const slider = <input className="h-[50px] w-full cursor-ew-resize accent-primary" type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} />;
+  if (stacked) return <label className="grid gap-0 text-sm font-medium"><span className="flex items-center justify-between gap-2"><span>{label}</span><output className="font-mono text-xs font-normal text-muted-foreground">{format(value)}</output></span>{slider}</label>;
+  return <label className="grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)_3.75rem] items-center gap-2"><span className="min-w-0 truncate text-xs font-medium uppercase tracking-[0.14em]">{label}</span>{slider}<output className="flex h-[50px] items-center justify-end rounded-lg bg-secondary/60 px-2 font-mono text-sm text-muted-foreground">{format(value)}</output></label>;
 }
 
 function ColorControl({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {

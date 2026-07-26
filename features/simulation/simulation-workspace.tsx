@@ -5,6 +5,7 @@ import { Play, RotateCcw, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricTile } from '@/components/ui/metric-tile';
+import { useErrorNotification } from '@/components/ui/sonner';
 import { Textarea } from '@/components/ui/textarea';
 
 type Audience = 'Customers' | 'Stakeholders' | 'Public';
@@ -34,6 +35,7 @@ export function SimulationWorkspace() {
   const [result, setResult] = useState<Result | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
+  useErrorNotification(error, 'simulation-error');
   const selectedPersonas = personas[audience];
 
   const reset = () => { setEvents([]); setResult(null); setError(''); };
@@ -72,8 +74,7 @@ export function SimulationWorkspace() {
             </div>
           </fieldset>
         </div>
-        <div className="flex gap-3"><Button type="button" onClick={() => void run()} disabled={running} className="h-[50px] flex-1"><Play className="h-4 w-4" />{running ? `Running ${events.length}/${rounds}` : 'Run'}</Button><Button type="button" variant="secondary" className="h-[50px]" onClick={reset} disabled={running}><RotateCcw className="h-4 w-4" />Clear</Button></div>
-        {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>}
+        <div className="flex gap-3"><Button type="button" onClick={() => void run()} disabled={running} className="h-[50px] flex-1"><Play className="h-4 w-4" />{running ? `Running ${events.length}/${rounds}` : 'Run'}</Button><Button type="button" variant="secondary" className="h-[50px]" onClick={reset} disabled={running}><RotateCcw className="h-4 w-4" />Reset</Button></div>
       </CardContent>
     </Card>
     <Card className="min-h-[560px]">

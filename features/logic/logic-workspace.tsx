@@ -5,6 +5,7 @@ import { CheckCircle2, Copy, FileCode2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricTile } from '@/components/ui/metric-tile';
+import { useErrorNotification } from '@/components/ui/sonner';
 import { Textarea } from '@/components/ui/textarea';
 import {
   buildFetchXml,
@@ -75,6 +76,7 @@ export function LogicWorkspace() {
   }), [items]);
   const master = mode === 'country' ? countries : states;
   const masterError = mode === 'country' ? countryMasterError : stateMasterError;
+  useErrorNotification(error || masterError, 'logic-error');
   const isReady = items.length > 0 && counts.invalid === 0 && counts.duplicate === 0 && counts.ambiguous === 0;
   const warnings = items.filter(({ status }) => status !== 'valid');
 
@@ -159,7 +161,7 @@ export function LogicWorkspace() {
           <Textarea aria-label="Generated FetchXML" className="min-h-[355px] flex-1 resize-none p-4 font-mono text-xs leading-5" readOnly value={xml} />
           <div className="flex flex-wrap gap-3">
             <Button type="button" variant={xml ? 'default' : 'secondary'} disabled={!xml} onClick={() => void copy()}>{copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? 'Copied' : 'Copy'}</Button>
-            <Button type="button" variant="secondary" onClick={clear}><RotateCcw className="h-4 w-4" />Clear</Button>
+            <Button type="button" variant="secondary" onClick={clear}><RotateCcw className="h-4 w-4" />Reset</Button>
           </div>
         </CardContent>
       </Card>
@@ -180,7 +182,6 @@ export function LogicWorkspace() {
               </ul>
             </div>
           )}
-          {(error || masterError) && <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{error || masterError}</div>}
         </CardContent>
       </Card>
     </div>
