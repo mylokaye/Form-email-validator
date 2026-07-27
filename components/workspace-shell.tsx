@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Command, GitBranch, Link2, MessagesSquare, Moon, PanelsTopLeft, Sun, WandSparkles } from 'lucide-react';
+import { CheckCircle2, Command, GitBranch, Link2, MessagesSquare, Moon, PanelsTopLeft, Rss, Sun, WandSparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Separator } from './ui/separator';
@@ -16,6 +16,7 @@ const tools = [
   { href: '/generate/', label: 'Generate', icon: WandSparkles },
   { href: '/convert/', label: 'Convert', icon: GitBranch },
   { href: '/validate/', label: 'Validate', icon: CheckCircle2 },
+  { href: '/news/', label: 'News', icon: Rss },
   { href: '/logic/', label: 'Logic', icon: Link2 },
   { href: '/simulation/', label: 'Simulation', icon: MessagesSquare },
   { href: '/studio/', label: 'Studio', icon: PanelsTopLeft },
