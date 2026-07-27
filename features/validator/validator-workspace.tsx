@@ -222,7 +222,6 @@ export function ValidatorWorkspace() {
     { label: 'Likely usable', value: String(confidences.filter(({ confidence }) => confidence === 'green').length), className: 'border-emerald-500/20 bg-emerald-500/10' },
     { label: 'Needs review', value: String(confidences.filter(({ confidence }) => confidence === 'orange').length), className: 'border-amber-500/20 bg-amber-500/10' },
     { label: 'Not usable', value: String(confidences.filter(({ confidence }) => confidence === 'red').length), className: 'border-red-500/20 bg-red-500/10' },
-    { label: 'Mailbox confirmed', value: '0', className: 'border-muted bg-muted/30' },
   ];
 
   return (
