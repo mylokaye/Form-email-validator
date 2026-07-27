@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useRef, useState } from 'react';
-import { CheckCircle2, Download, RotateCcw, Upload } from 'lucide-react';
+import { CheckCircle2, CircleAlert, CircleX, Download, RotateCcw, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricTile } from '@/components/ui/metric-tile';
@@ -82,6 +82,7 @@ export function ValidatorWorkspace() {
   const mxAbort = useRef<AbortController | null>(null);
   const [input, setInput] = useState('');
   const [results, setResults] = useState<EmailResult[]>([]);
+  const [mxDomains, setMxDomains] = useState<Record<string, boolean>>({});
   const [summary, setSummary] = useState<ValidationSummary>(emptySummary);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
@@ -109,6 +110,7 @@ export function ValidatorWorkspace() {
     const next = validateEmails(emails);
     setResults(next.emails);
     setSummary(next.summary);
+    setMxDomains({});
     const domains = [...new Set(next.emails.filter(({ status: resultStatus }) => resultStatus === 'Valid').map(({ email }) => getEmailDomain(email)))];
     if (!domains.length) return;
 
@@ -123,6 +125,7 @@ export function ValidatorWorkspace() {
         .map(({ value: lookup }) => lookup);
       if (!lookups.length) throw new Error('MX lookup failed.');
       const mxDomains = new Set(lookups.filter(({ hasMx }) => hasMx).map(({ domain }) => domain));
+      setMxDomains(Object.fromEntries(lookups.map(({ domain, hasMx }) => [domain, hasMx])));
       setSummary({
         ...next.summary,
         mxValidated: next.emails.filter(({ email, status: resultStatus }) => resultStatus === 'Valid' && mxDomains.has(getEmailDomain(email))).length,
@@ -167,6 +170,7 @@ export function ValidatorWorkspace() {
     validationRequest.current += 1;
     setInput('');
     setResults([]);
+    setMxDomains({});
     setSummary(emptySummary);
     setError('');
     setStatus('');
@@ -192,6 +196,54 @@ export function ValidatorWorkspace() {
     { label: 'Duplicates', value: String(summary.duplicate), className: 'border-amber-500/20 bg-amber-500/10' },
     { label: 'Invalid', value: String(summary.invalid), className: 'border-red-500/20 bg-red-500/10' },
   ];
+
+  const verificationResult = ({ email, status: resultStatus }: EmailResult) => {
+    if (resultStatus === 'Invalid') {
+      return {
+        className: 'border-red-500/20 bg-red-500/5',
+        description: 'The address format is invalid, so it cannot be checked further.',
+        icon: CircleX,
+        reason: 'Invalid email',
+        status: 'Undeliverable',
+      };
+    }
+    if (resultStatus === 'Duplicate') {
+      return {
+        className: 'border-amber-500/20 bg-amber-500/5',
+        description: 'This address appears more than once in the submitted list.',
+        icon: CircleAlert,
+        reason: 'Duplicate address',
+        status: 'Review',
+      };
+    }
+
+    const domain = getEmailDomain(email);
+    if (!Object.hasOwn(mxDomains, domain)) {
+      return {
+        className: 'border-muted bg-muted/20',
+        description: 'The domain check was unavailable. Try validating again.',
+        icon: CircleAlert,
+        reason: 'Domain not checked',
+        status: 'Unknown',
+      };
+    }
+    if (!mxDomains[domain]) {
+      return {
+        className: 'border-red-500/20 bg-red-500/5',
+        description: 'No MX record was found for this domain. The mailbox was not checked.',
+        icon: CircleX,
+        reason: 'No MX record',
+        status: 'Undeliverable',
+      };
+    }
+    return {
+      className: 'border-emerald-500/20 bg-emerald-500/5',
+      description: 'The domain can receive mail. A mailbox-level SMTP check has not been performed.',
+      icon: CheckCircle2,
+      reason: 'MX record found',
+      status: 'Domain validated',
+    };
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
@@ -229,14 +281,44 @@ export function ValidatorWorkspace() {
         </Card>
 
         <Card className="min-h-[320px] lg:h-full">
-          <CardHeader className="border-b"><CardTitle>Summary</CardTitle></CardHeader>
+          <CardHeader className="border-b"><CardTitle>Verification summary</CardTitle></CardHeader>
           <CardContent className="pt-4">
             <dl className="grid grid-cols-2 gap-3">
               {metrics.map((metric) => <MetricTile key={metric.label} {...metric} />)}
             </dl>
+            <p className="mt-4 text-xs text-muted-foreground">Results identify address format, duplicates, and mail-enabled domains. They do not confirm that a specific mailbox exists.</p>
           </CardContent>
         </Card>
       </div>
+
+      {results.length > 0 && (
+        <Card className="lg:col-span-2">
+          <CardHeader className="border-b"><CardTitle>Verification results</CardTitle></CardHeader>
+          <CardContent className="space-y-3 pt-4">
+            {results.map((result, index) => {
+              const verification = verificationResult(result);
+              const Icon = verification.icon;
+              return (
+                <article key={`${result.email}-${index}`} className={`rounded-lg border p-4 ${verification.className}`}>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 gap-3">
+                      <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{result.email}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{verification.description}</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-left sm:text-right">
+                      <p className="text-sm font-medium">{verification.status}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{verification.reason}</p>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
