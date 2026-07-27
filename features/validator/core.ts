@@ -12,6 +12,21 @@ export type EmailResult = {
   valid: boolean;
 };
 
+const DISPOSABLE_EMAIL_DOMAINS = new Set([
+  '10minutemail.com', 'dispostable.com', 'fakeinbox.com', 'getnada.com', 'guerrillamail.com', 'maildrop.cc', 'mailinator.com',
+  'sharklasers.com', 'tempmail.com', 'temp-mail.org', 'throwawaymail.com', 'trashmail.com', 'yopmail.com',
+]);
+
+const ROLE_LOCAL_PARTS = new Set([
+  'abuse', 'admin', 'billing', 'careers', 'contact', 'enquiries', 'hello', 'help', 'hr', 'info', 'legal', 'marketing', 'media', 'office', 'press', 'privacy', 'sales', 'security', 'support', 'team',
+]);
+
+const DOMAIN_TYPOS: Record<string, string> = {
+  'gamil.com': 'gmail.com', 'gmai.com': 'gmail.com', 'gmail.con': 'gmail.com', 'gmial.com': 'gmail.com',
+  'hotnail.com': 'hotmail.com', 'hotmail.con': 'hotmail.com', 'iclould.com': 'icloud.com', 'outlook.con': 'outlook.com',
+  'protonnmail.com': 'protonmail.com', 'yaho.com': 'yahoo.com', 'yahooo.com': 'yahoo.com',
+};
+
 export type ValidationSummary = {
   total: number;
   checked: number;
@@ -49,6 +64,18 @@ export function isValidEmailSyntax(email: unknown) {
 
 export function getEmailDomain(email: string) {
   return email.slice(email.lastIndexOf('@') + 1).toLowerCase();
+}
+
+export function isDisposableEmailDomain(domain: string) {
+  return DISPOSABLE_EMAIL_DOMAINS.has(domain.toLowerCase());
+}
+
+export function isRoleEmail(email: string) {
+  return ROLE_LOCAL_PARTS.has(email.slice(0, email.lastIndexOf('@')).toLowerCase());
+}
+
+export function getDomainTypoSuggestion(domain: string) {
+  return DOMAIN_TYPOS[domain.toLowerCase()] ?? null;
 }
 
 export function parseCsv(text: string) {

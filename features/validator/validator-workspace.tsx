@@ -10,24 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   escapeCsvField,
   extractEmailsFromText,
+  getDomainTypoSuggestion,
   getEmailDomain,
+  isDisposableEmailDomain,
+  isRoleEmail,
   MAX_EMAILS,
   MAX_FILE_SIZE,
   MAX_INPUT_LENGTH,
   type EmailResult,
-  type ValidationSummary,
   validateEmails,
 } from './core';
-
-const emptySummary: ValidationSummary = {
-  total: 0,
-  checked: 0,
-  valid: 0,
-  invalid: 0,
-  duplicate: 0,
-  validRate: 0,
-  mxValidated: 0,
-};
 
 const sampleEmails = [
   'alex@example.com',
@@ -38,42 +30,80 @@ const sampleEmails = [
   'name.surname+pattens@sub.example.org',
 ].join('\n');
 
-const MX_CONCURRENCY = 8;
+const DOMAIN_LOOKUP_CONCURRENCY = 2;
 const CSV_MIME_TYPES = new Set(['', 'text/csv', 'application/csv', 'application/vnd.ms-excel', 'text/plain']);
 
-type MxLookup = { domain: string; hasMx: boolean };
+type DomainLookup = {
+  domain: string;
+  hasDmarc: boolean | null;
+  hasNullMx: boolean;
+  hasSpf: boolean | null;
+  mailRoute: 'implicit' | 'mx' | 'none' | 'unknown';
+};
+
+type Confidence = 'green' | 'orange' | 'red';
+
+type Verification = {
+  className: string;
+  confidence: Confidence;
+  description: string;
+  icon: typeof CheckCircle2;
+  reason: string;
+  status: string;
+};
 
 function isCsvUpload(file: File) {
   return file.name.toLowerCase().endsWith('.csv') && CSV_MIME_TYPES.has(file.type);
 }
 
-async function lookupMxDomain(domain: string, signal: AbortSignal): Promise<MxLookup> {
+async function lookupDomain(domain: string, signal: AbortSignal): Promise<DomainLookup> {
   const response = await fetch('/api/mx', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ domain }),
     signal,
   });
-  if (!response.ok) throw new Error('MX lookup failed.');
-  return (await response.json()) as MxLookup;
+  if (!response.ok) throw new Error('Domain lookup failed.');
+  return (await response.json()) as DomainLookup;
 }
 
-async function lookupMxDomains(domains: string[], signal: AbortSignal) {
-  const outcomes: PromiseSettledResult<MxLookup>[] = new Array(domains.length);
+async function lookupDomains(domains: string[], signal: AbortSignal) {
+  const outcomes: PromiseSettledResult<DomainLookup>[] = new Array(domains.length);
   let nextIndex = 0;
   const worker = async () => {
     while (nextIndex < domains.length) {
       const currentIndex = nextIndex;
       nextIndex += 1;
       try {
-        outcomes[currentIndex] = { status: 'fulfilled', value: await lookupMxDomain(domains[currentIndex], signal) };
+        outcomes[currentIndex] = { status: 'fulfilled', value: await lookupDomain(domains[currentIndex], signal) };
       } catch (reason) {
         outcomes[currentIndex] = { status: 'rejected', reason };
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(MX_CONCURRENCY, domains.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(DOMAIN_LOOKUP_CONCURRENCY, domains.length) }, worker));
   return outcomes;
+}
+
+function verificationResult({ email, status: resultStatus }: EmailResult, domainChecks: Record<string, DomainLookup>): Verification {
+  if (resultStatus === 'Invalid') return { className: 'border-red-500/20 bg-red-500/5', confidence: 'red', description: 'The address format is invalid.', icon: CircleX, reason: 'Invalid email format', status: 'Not usable' };
+  if (resultStatus === 'Duplicate') return { className: 'border-amber-500/20 bg-amber-500/5', confidence: 'orange', description: 'This address appears more than once in the submitted list.', icon: CircleAlert, reason: 'Duplicate address', status: 'Needs review' };
+
+  const domain = getEmailDomain(email);
+  const domainCheck = domainChecks[domain];
+  if (!domainCheck || domainCheck.mailRoute === 'unknown') return { className: 'border-amber-500/20 bg-amber-500/5', confidence: 'orange', description: 'The domain mail route could not be confirmed. Try again.', icon: CircleAlert, reason: 'Domain check unavailable', status: 'Needs review' };
+  if (domainCheck.hasNullMx) return { className: 'border-red-500/20 bg-red-500/5', confidence: 'red', description: 'This domain explicitly rejects all email. The mailbox is unverified.', icon: CircleX, reason: 'Domain rejects all email (null MX)', status: 'Not usable' };
+  if (isDisposableEmailDomain(domain)) return { className: 'border-red-500/20 bg-red-500/5', confidence: 'red', description: 'This is a known disposable-email domain.', icon: CircleX, reason: 'Disposable email domain', status: 'Not usable' };
+  const typoSuggestion = getDomainTypoSuggestion(domain);
+  if (typoSuggestion) return { className: 'border-amber-500/20 bg-amber-500/5', confidence: 'orange', description: `This domain may be a typo. Did you mean ${typoSuggestion}?`, icon: CircleAlert, reason: 'Likely domain typo', status: 'Needs review' };
+  if (domainCheck.mailRoute === 'none') return { className: 'border-red-500/20 bg-red-500/5', confidence: 'red', description: 'This domain has no mail route. The mailbox is unverified.', icon: CircleX, reason: 'No mail route found', status: 'Not usable' };
+  if (isRoleEmail(email)) return { className: 'border-amber-500/20 bg-amber-500/5', confidence: 'orange', description: 'This is a role address. It may work, but it is not a personal inbox.', icon: CircleAlert, reason: 'Role address', status: 'Needs review' };
+  return { className: 'border-emerald-500/20 bg-emerald-500/5', confidence: 'green', description: 'A mail route was found. The specific mailbox is unverified.', icon: CheckCircle2, reason: 'Mailbox unverified', status: 'Likely usable' };
+}
+
+function signalLabel(label: string, value: boolean | null) {
+  if (value === null) return `${label} unavailable`;
+  return value ? `${label} published` : `${label} not published`;
 }
 
 export function ValidatorWorkspace() {
@@ -82,8 +112,7 @@ export function ValidatorWorkspace() {
   const mxAbort = useRef<AbortController | null>(null);
   const [input, setInput] = useState('');
   const [results, setResults] = useState<EmailResult[]>([]);
-  const [mxDomains, setMxDomains] = useState<Record<string, boolean>>({});
-  const [summary, setSummary] = useState<ValidationSummary>(emptySummary);
+  const [domainChecks, setDomainChecks] = useState<Record<string, DomainLookup>>({});
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   useErrorNotification(error, 'validator-error');
@@ -109,29 +138,23 @@ export function ValidatorWorkspace() {
 
     const next = validateEmails(emails);
     setResults(next.emails);
-    setSummary(next.summary);
-    setMxDomains({});
+    setDomainChecks({});
     const domains = [...new Set(next.emails.filter(({ status: resultStatus }) => resultStatus === 'Valid').map(({ email }) => getEmailDomain(email)))];
     if (!domains.length) return;
 
-    setStatus('Checking MX records...');
+    setStatus('Checking mail-domain signals...');
     const controller = new AbortController();
     mxAbort.current = controller;
     try {
-      const lookupResults = await lookupMxDomains(domains, controller.signal);
+      const lookupResults = await lookupDomains(domains, controller.signal);
       if (controller.signal.aborted || validationRequest.current !== requestId) return;
       const lookups = lookupResults
-        .filter((lookup): lookup is PromiseFulfilledResult<{ domain: string; hasMx: boolean }> => lookup.status === 'fulfilled')
+        .filter((lookup): lookup is PromiseFulfilledResult<DomainLookup> => lookup.status === 'fulfilled')
         .map(({ value: lookup }) => lookup);
-      if (!lookups.length) throw new Error('MX lookup failed.');
-      const mxDomains = new Set(lookups.filter(({ hasMx }) => hasMx).map(({ domain }) => domain));
-      setMxDomains(Object.fromEntries(lookups.map(({ domain, hasMx }) => [domain, hasMx])));
-      setSummary({
-        ...next.summary,
-        mxValidated: next.emails.filter(({ email, status: resultStatus }) => resultStatus === 'Valid' && mxDomains.has(getEmailDomain(email))).length,
-      });
+      if (!lookups.length) throw new Error('Domain lookup failed.');
+      setDomainChecks(Object.fromEntries(lookups.map((lookup) => [lookup.domain, lookup])));
     } catch {
-      if (!controller.signal.aborted && validationRequest.current === requestId) setError('MX records could not be checked. Syntax and duplicate results are still available.');
+      if (!controller.signal.aborted && validationRequest.current === requestId) setError('Mail-domain checks could not be completed. Syntax and duplicate results are still available.');
     } finally {
       if (mxAbort.current === controller) mxAbort.current = null;
       if (validationRequest.current === requestId) setStatus('');
@@ -170,8 +193,7 @@ export function ValidatorWorkspace() {
     validationRequest.current += 1;
     setInput('');
     setResults([]);
-    setMxDomains({});
-    setSummary(emptySummary);
+    setDomainChecks({});
     setError('');
     setStatus('');
   };
@@ -181,7 +203,12 @@ export function ValidatorWorkspace() {
       setError('No validation results found.');
       return;
     }
-    const csv = ['Email,Status', ...results.map(({ email, status: resultStatus }) => `${escapeCsvField(email)},${escapeCsvField(resultStatus)}`)].join('\n');
+    const csv = ['Email,Confidence,Reason,Mail route,SPF,DMARC,Mailbox status', ...results.map((result) => {
+      const verification = verificationResult(result, domainChecks);
+      const check = domainChecks[getEmailDomain(result.email)];
+      const route = check?.mailRoute === 'mx' ? 'MX record found' : check?.mailRoute === 'implicit' ? 'Mail server found' : check?.mailRoute === 'none' ? 'No mail route' : 'Unavailable';
+      return [result.email, verification.status, verification.reason, route, signalLabel('SPF', check?.hasSpf ?? null).replace('SPF ', ''), signalLabel('DMARC', check?.hasDmarc ?? null).replace('DMARC ', ''), 'Unverified'].map(escapeCsvField).join(',');
+    })].join('\n');
     const link = document.createElement('a');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     link.href = url;
@@ -190,60 +217,13 @@ export function ValidatorWorkspace() {
     URL.revokeObjectURL(url);
   };
 
+  const confidences = results.map((result) => verificationResult(result, domainChecks));
   const metrics = [
-    { label: 'Syntax validated', value: String(summary.valid), className: 'border-emerald-500/20 bg-emerald-500/10' },
-    { label: 'Domain validated', value: String(summary.mxValidated), className: 'border-emerald-500/20 bg-emerald-500/10' },
-    { label: 'Duplicates', value: String(summary.duplicate), className: 'border-amber-500/20 bg-amber-500/10' },
-    { label: 'Invalid', value: String(summary.invalid), className: 'border-red-500/20 bg-red-500/10' },
+    { label: 'Likely usable', value: String(confidences.filter(({ confidence }) => confidence === 'green').length), className: 'border-emerald-500/20 bg-emerald-500/10' },
+    { label: 'Needs review', value: String(confidences.filter(({ confidence }) => confidence === 'orange').length), className: 'border-amber-500/20 bg-amber-500/10' },
+    { label: 'Not usable', value: String(confidences.filter(({ confidence }) => confidence === 'red').length), className: 'border-red-500/20 bg-red-500/10' },
+    { label: 'Mailbox confirmed', value: '0', className: 'border-muted bg-muted/30' },
   ];
-
-  const verificationResult = ({ email, status: resultStatus }: EmailResult) => {
-    if (resultStatus === 'Invalid') {
-      return {
-        className: 'border-red-500/20 bg-red-500/5',
-        description: 'The address format is invalid, so it cannot be checked further.',
-        icon: CircleX,
-        reason: 'Invalid email',
-        status: 'Undeliverable',
-      };
-    }
-    if (resultStatus === 'Duplicate') {
-      return {
-        className: 'border-amber-500/20 bg-amber-500/5',
-        description: 'This address appears more than once in the submitted list.',
-        icon: CircleAlert,
-        reason: 'Duplicate address',
-        status: 'Review',
-      };
-    }
-
-    const domain = getEmailDomain(email);
-    if (!Object.hasOwn(mxDomains, domain)) {
-      return {
-        className: 'border-muted bg-muted/20',
-        description: 'The domain check was unavailable. Try validating again.',
-        icon: CircleAlert,
-        reason: 'Domain not checked',
-        status: 'Unknown',
-      };
-    }
-    if (!mxDomains[domain]) {
-      return {
-        className: 'border-red-500/20 bg-red-500/5',
-        description: 'No MX record was found for this domain. The mailbox was not checked.',
-        icon: CircleX,
-        reason: 'No MX record',
-        status: 'Undeliverable',
-      };
-    }
-    return {
-      className: 'border-emerald-500/20 bg-emerald-500/5',
-      description: 'The domain can receive mail. A mailbox-level SMTP check has not been performed.',
-      icon: CheckCircle2,
-      reason: 'MX record found',
-      status: 'Domain validated',
-    };
-  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
@@ -275,7 +255,7 @@ export function ValidatorWorkspace() {
             <Button type="button" variant="secondary" className="min-w-20" disabled={!results.length} onClick={download}><Download className="h-4 w-4" />CSV</Button>
             <Button type="button" variant="secondary" size="sm" className="h-10 px-3" onClick={clear}><RotateCcw className="h-4 w-4" />Reset</Button>
             <input ref={fileInput} className="hidden" type="file" accept=".csv,text/csv" onChange={upload} />
-            <p className="w-full text-xs text-muted-foreground">MX checks send valid domains only; email addresses stay in your browser.</p>
+            <p className="w-full text-xs text-muted-foreground">Mail-domain checks send valid domains only; email addresses stay in your browser.</p>
             {status && <p className="w-full text-xs text-muted-foreground" role="status">{status}</p>}
           </CardContent>
         </Card>
@@ -286,7 +266,7 @@ export function ValidatorWorkspace() {
             <dl className="grid grid-cols-2 gap-3">
               {metrics.map((metric) => <MetricTile key={metric.label} {...metric} />)}
             </dl>
-            <p className="mt-4 text-xs text-muted-foreground">Results identify address format, duplicates, and mail-enabled domains. They do not confirm that a specific mailbox exists.</p>
+            <p className="mt-4 text-xs text-muted-foreground">Green means a likely usable address, not a confirmed mailbox. Pattens does not perform mailbox-level SMTP checks.</p>
           </CardContent>
         </Card>
       </div>
@@ -296,8 +276,9 @@ export function ValidatorWorkspace() {
           <CardHeader className="border-b"><CardTitle>Verification results</CardTitle></CardHeader>
           <CardContent className="space-y-3 pt-4">
             {results.map((result, index) => {
-              const verification = verificationResult(result);
+              const verification = verificationResult(result, domainChecks);
               const Icon = verification.icon;
+              const domainCheck = domainChecks[getEmailDomain(result.email)];
               return (
                 <article key={`${result.email}-${index}`} className={`rounded-lg border p-4 ${verification.className}`}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -313,6 +294,12 @@ export function ValidatorWorkspace() {
                       <p className="mt-1 text-xs text-muted-foreground">{verification.reason}</p>
                     </div>
                   </div>
+                  {result.status === 'Valid' && domainCheck && (
+                    <details className="mt-3 border-t border-current/10 pt-3 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer font-medium text-foreground">Domain signals</summary>
+                      <p className="mt-2">{domainCheck.mailRoute === 'mx' ? 'MX record found' : domainCheck.mailRoute === 'implicit' ? 'Mail server found' : domainCheck.mailRoute === 'none' ? 'No mail route found' : 'Mail route unavailable'} · {signalLabel('SPF', domainCheck.hasSpf)} · {signalLabel('DMARC', domainCheck.hasDmarc)} · Mailbox unverified</p>
+                    </details>
+                  )}
                 </article>
               );
             })}
