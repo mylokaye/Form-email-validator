@@ -34,6 +34,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     setDark(nextDark);
     document.documentElement.classList.toggle('dark', nextDark);
   }, []);
+  useEffect(() => { void fetch('/api/release-monitor').catch(() => undefined); }, []);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement)?.tagName)) { event.preventDefault(); setCommandOpen(true); }
