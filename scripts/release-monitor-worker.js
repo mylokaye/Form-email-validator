@@ -1,7 +1,7 @@
 var RELEASE_MONITOR_CACHE_MS = 6 * 60 * 60 * 1000;
 var RELEASE_MONITOR_RECENT_MS = 30 * 24 * 60 * 60 * 1000;
 var RELEASE_MONITOR_MIN_YEAR = 2026;
-var RELEASE_MONITOR_SCHEMA_VERSION = 'release-monitor-v2';
+var RELEASE_MONITOR_SCHEMA_VERSION = 'release-monitor-v3';
 var RELEASE_MONITOR_PRODUCT_ID = '940fa520-7756-ee11-be6f-000d3a574715';
 var RELEASE_MONITOR_SOURCE_URL = 'https://releaseplans.microsoft.com/en-us/?app=Customer+Insights+-+Journeys';
 var RELEASE_MONITOR_DATA_URL = 'https://releaseplans.microsoft.com/releaseplanner-json/?productId=' + RELEASE_MONITOR_PRODUCT_ID + '&langCode=en-US';
@@ -32,11 +32,13 @@ async function ensureReleaseMonitorSchema(env) {
 }
 
 function releaseMonitorRecord(item) {
-  var previewDate = releaseMonitorText(item.PublicPreviewDate, 32);
-  var gaDate = releaseMonitorText(item.GADate, 32);
+  var sourcePreviewDate = releaseMonitorText(item.PublicPreviewDate, 32);
+  var sourceGaDate = releaseMonitorText(item.GADate, 32);
   var lastUpdatedAt = releaseMonitorDate(item.GitCommitDate) || releaseMonitorDate(item.Createdon) || null;
-  var relevantYear = Math.max(releaseMonitorYear(previewDate), releaseMonitorYear(gaDate), releaseMonitorYear(item.EarlyAccessDate), releaseMonitorWaveYear(item.ReleaseWaveName), releaseMonitorWaveYear(item.GAReleaseWaveName));
+  var relevantYear = Math.max(releaseMonitorYear(sourcePreviewDate), releaseMonitorYear(sourceGaDate), releaseMonitorYear(item.EarlyAccessDate), releaseMonitorWaveYear(item.ReleaseWaveName), releaseMonitorWaveYear(item.GAReleaseWaveName));
   if (relevantYear < RELEASE_MONITOR_MIN_YEAR) return null;
+  var previewDate = releaseMonitorYear(sourcePreviewDate) >= RELEASE_MONITOR_MIN_YEAR ? sourcePreviewDate : '';
+  var gaDate = releaseMonitorYear(sourceGaDate) >= RELEASE_MONITOR_MIN_YEAR ? sourceGaDate : '';
   var record = {
     featureId: releaseMonitorText(item.ReleasePlanID || item.SnapshotId, 120),
     title: releaseMonitorText(item.FeatureName, 300),
