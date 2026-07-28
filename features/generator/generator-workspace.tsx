@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Check, Copy, ExternalLink, Link2, RotateCcw } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -51,6 +51,8 @@ export function GeneratorWorkspace() {
   const [survey, setSurvey] = useState(emptySurvey);
   const [highlight, setHighlight] = useState("");
   const [copied, setCopied] = useState(false);
+  const [urlValidation, setUrlValidation] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const urlValidationRequest = useRef(0);
   const output = useMemo(
     () =>
       mode === "link"
@@ -87,6 +89,27 @@ export function GeneratorWorkspace() {
   };
   const linkSet = (key: keyof LinkValues, value: string) =>
     setLink((current) => ({ ...current, [key]: value }));
+  const setLinkUrl = (value: string) => {
+    urlValidationRequest.current += 1;
+    setUrlValidation("idle");
+    linkSet("baseUrl", value);
+  };
+  const validateUrl = async () => {
+    const requestId = urlValidationRequest.current + 1;
+    urlValidationRequest.current = requestId;
+    setUrlValidation("loading");
+    try {
+      const response = await fetch("/api/url-check", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: link.baseUrl }),
+      });
+      const payload = (await response.json()) as { valid?: boolean };
+      if (urlValidationRequest.current === requestId) setUrlValidation(response.ok && payload.valid ? "success" : "error");
+    } catch {
+      if (urlValidationRequest.current === requestId) setUrlValidation("error");
+    }
+  };
   const campaignSet = (key: keyof CampaignValues, value: string) =>
     setCampaign((current) => ({ ...current, [key]: value }));
   const surveySet = (key: keyof SurveyValues, value: string) =>
@@ -121,12 +144,19 @@ export function GeneratorWorkspace() {
           <CardContent className="grid gap-4 pt-4 sm:grid-cols-2">
             {mode === "link" && (
               <>
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-2 space-y-2">
                   <Field
                     label="URL"
                     value={link.baseUrl}
-                    onChange={(value) => linkSet("baseUrl", value)}
+                    onChange={setLinkUrl}
                   />
+                  <div className="flex min-h-8 items-center gap-3">
+                    <Button type="button" variant="secondary" size="sm" onClick={() => void validateUrl()} disabled={urlValidation === "loading"}>
+                      {urlValidation === "loading" ? "Validating…" : "Validate"}
+                    </Button>
+                    {urlValidation === "success" && <p className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700" role="status"><Check className="h-4 w-4" />URL validated</p>}
+                    {urlValidation === "error" && <p className="text-sm text-destructive" role="alert">Could not validate this URL.</p>}
+                  </div>
                 </div>
                 <Field
                   label="Source"
