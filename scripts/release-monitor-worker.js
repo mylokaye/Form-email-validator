@@ -1,6 +1,7 @@
 var RELEASE_MONITOR_CACHE_MS = 6 * 60 * 60 * 1000;
 var RELEASE_MONITOR_RECENT_MS = 30 * 24 * 60 * 60 * 1000;
 var RELEASE_MONITOR_MIN_YEAR = 2026;
+var RELEASE_MONITOR_SCHEMA_VERSION = 'release-monitor-v2';
 var RELEASE_MONITOR_PRODUCT_ID = '940fa520-7756-ee11-be6f-000d3a574715';
 var RELEASE_MONITOR_SOURCE_URL = 'https://releaseplans.microsoft.com/en-us/?app=Customer+Insights+-+Journeys';
 var RELEASE_MONITOR_DATA_URL = 'https://releaseplans.microsoft.com/releaseplanner-json/?productId=' + RELEASE_MONITOR_PRODUCT_ID + '&langCode=en-US';
@@ -15,6 +16,7 @@ function releaseMonitorRows(result) { return result && Array.isArray(result.resu
 function releaseMonitorText(value, limit) { return String(value || '').replace(/\s+/g, ' ').trim().slice(0, limit); }
 function releaseMonitorDate(value) { var timestamp = Date.parse(value); return Number.isFinite(timestamp) ? timestamp : null; }
 function releaseMonitorYear(value) { var timestamp = releaseMonitorDate(value); return timestamp ? new Date(timestamp).getUTCFullYear() : 0; }
+function releaseMonitorWaveYear(value) { var match = /\b(20\d{2})\b/.exec(String(value || '')); return match ? Number(match[1]) : 0; }
 
 async function ensureReleaseMonitorSchema(env) {
   if (releaseMonitorSchemaReady) return;
@@ -32,7 +34,7 @@ function releaseMonitorRecord(item) {
   var previewDate = releaseMonitorText(item.PublicPreviewDate, 32);
   var gaDate = releaseMonitorText(item.GADate, 32);
   var lastUpdatedAt = releaseMonitorDate(item.GitCommitDate) || releaseMonitorDate(item.Createdon) || null;
-  var relevantYear = Math.max(releaseMonitorYear(previewDate), releaseMonitorYear(gaDate), releaseMonitorYear(item.EarlyAccessDate), releaseMonitorYear(item.GitCommitDate));
+  var relevantYear = Math.max(releaseMonitorYear(previewDate), releaseMonitorYear(gaDate), releaseMonitorYear(item.EarlyAccessDate), releaseMonitorWaveYear(item.ReleaseWaveName), releaseMonitorWaveYear(item.GAReleaseWaveName));
   if (relevantYear < RELEASE_MONITOR_MIN_YEAR) return null;
   var record = {
     featureId: releaseMonitorText(item.ReleasePlanID || item.SnapshotId, 120),
@@ -84,8 +86,17 @@ async function refreshReleaseMonitor(env) {
     statements.push(db.prepare('INSERT INTO release_monitor_features (feature_id, title, area, source_url, preview_date, ga_date, preview_status, ga_status, last_updated_at, fingerprint, first_seen_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(feature_id) DO UPDATE SET title = excluded.title, area = excluded.area, source_url = excluded.source_url, preview_date = excluded.preview_date, ga_date = excluded.ga_date, preview_status = excluded.preview_status, ga_status = excluded.ga_status, last_updated_at = excluded.last_updated_at, fingerprint = excluded.fingerprint, updated_at = excluded.updated_at').bind(record.featureId, record.title, record.area || null, record.sourceUrl, record.previewDate || null, record.gaDate || null, record.previewStatus || null, record.gaStatus || null, record.lastUpdatedAt, record.fingerprint, now, now));
     if (previous && previous.fingerprint !== record.fingerprint) statements.push(db.prepare('INSERT INTO release_monitor_changes (feature_id, change_type, summary, detected_at) VALUES (?, ?, ?, ?)').bind(record.featureId, 'changed', releaseMonitorChangeSummary(previous, record), now));
   });
+  if (records.length) {
+    var placeholders = records.map(function () { return '?'; }).join(', ');
+    var ids = records.map(function (record) { return record.featureId; });
+    var deleteChanges = db.prepare('DELETE FROM release_monitor_changes WHERE feature_id NOT IN (' + placeholders + ')');
+    var deleteFeatures = db.prepare('DELETE FROM release_monitor_features WHERE feature_id NOT IN (' + placeholders + ')');
+    statements.push(deleteChanges.bind.apply(deleteChanges, ids));
+    statements.push(deleteFeatures.bind.apply(deleteFeatures, ids));
+  }
   if (statements.length) await db.batch(statements);
   await db.prepare('INSERT INTO release_monitor_state (id, last_checked_at, last_error) VALUES (1, ?, NULL) ON CONFLICT(id) DO UPDATE SET last_checked_at = excluded.last_checked_at, last_error = NULL').bind(now).run();
+  await db.prepare('INSERT INTO release_monitor_state (id, last_checked_at, last_error) VALUES (2, ?, ?) ON CONFLICT(id) DO UPDATE SET last_checked_at = excluded.last_checked_at, last_error = excluded.last_error').bind(now, RELEASE_MONITOR_SCHEMA_VERSION).run();
 }
 
 async function releaseMonitorStatus(env) {
@@ -112,7 +123,8 @@ async function handleReleaseMonitor(request, env) {
   if (request.method !== 'GET') return newsError('Method not allowed.', 405);
   await ensureReleaseMonitorSchema(env);
   var status = await releaseMonitorStatus(env); var now = Date.now();
-  if (!status.last_checked_at || now - Number(status.last_checked_at) >= RELEASE_MONITOR_CACHE_MS) {
+  var versionRow = releaseMonitorRows(await releaseMonitorDb(env).prepare('SELECT last_error FROM release_monitor_state WHERE id = 2').all())[0];
+  if (!status.last_checked_at || !versionRow || versionRow.last_error !== RELEASE_MONITOR_SCHEMA_VERSION || now - Number(status.last_checked_at) >= RELEASE_MONITOR_CACHE_MS) {
     try { await refreshReleaseMonitor(env); } catch (error) { await releaseMonitorDb(env).prepare('INSERT INTO release_monitor_state (id, last_checked_at, last_error) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET last_checked_at = excluded.last_checked_at, last_error = excluded.last_error').bind(now, releaseMonitorText(error instanceof Error ? error.message : 'Could not check Microsoft Release Plans.', 240)).run(); }
   }
   var payload = await releaseMonitorPayload(env); var latestStatus = await releaseMonitorStatus(env); payload.checkedAt = latestStatus.last_checked_at ? Number(latestStatus.last_checked_at) : null; payload.lastError = latestStatus.last_error || null;
