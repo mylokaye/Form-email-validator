@@ -23,6 +23,7 @@ async function ensureReleaseMonitorSchema(env) {
   var db = releaseMonitorDb(env);
   await db.batch([
     db.prepare('CREATE TABLE IF NOT EXISTS release_monitor_state (id INTEGER PRIMARY KEY CHECK (id = 1), last_checked_at INTEGER, last_error TEXT)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS release_monitor_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)'),
     db.prepare('CREATE TABLE IF NOT EXISTS release_monitor_features (feature_id TEXT PRIMARY KEY, title TEXT NOT NULL, area TEXT, source_url TEXT NOT NULL, preview_date TEXT, ga_date TEXT, preview_status TEXT, ga_status TEXT, last_updated_at INTEGER, fingerprint TEXT NOT NULL, first_seen_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)'),
     db.prepare('CREATE TABLE IF NOT EXISTS release_monitor_changes (id INTEGER PRIMARY KEY AUTOINCREMENT, feature_id TEXT NOT NULL, change_type TEXT NOT NULL, summary TEXT NOT NULL, detected_at INTEGER NOT NULL)'),
     db.prepare('CREATE INDEX IF NOT EXISTS release_monitor_changes_detected_at_idx ON release_monitor_changes(detected_at DESC)'),
@@ -96,7 +97,7 @@ async function refreshReleaseMonitor(env) {
   }
   if (statements.length) await db.batch(statements);
   await db.prepare('INSERT INTO release_monitor_state (id, last_checked_at, last_error) VALUES (1, ?, NULL) ON CONFLICT(id) DO UPDATE SET last_checked_at = excluded.last_checked_at, last_error = NULL').bind(now).run();
-  await db.prepare('INSERT INTO release_monitor_state (id, last_checked_at, last_error) VALUES (2, ?, ?) ON CONFLICT(id) DO UPDATE SET last_checked_at = excluded.last_checked_at, last_error = excluded.last_error').bind(now, RELEASE_MONITOR_SCHEMA_VERSION).run();
+  await db.prepare('INSERT INTO release_monitor_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').bind('schema_version', RELEASE_MONITOR_SCHEMA_VERSION).run();
 }
 
 async function releaseMonitorStatus(env) {
@@ -123,8 +124,8 @@ async function handleReleaseMonitor(request, env) {
   if (request.method !== 'GET') return newsError('Method not allowed.', 405);
   await ensureReleaseMonitorSchema(env);
   var status = await releaseMonitorStatus(env); var now = Date.now();
-  var versionRow = releaseMonitorRows(await releaseMonitorDb(env).prepare('SELECT last_error FROM release_monitor_state WHERE id = 2').all())[0];
-  if (!status.last_checked_at || !versionRow || versionRow.last_error !== RELEASE_MONITOR_SCHEMA_VERSION || now - Number(status.last_checked_at) >= RELEASE_MONITOR_CACHE_MS) {
+  var versionRow = releaseMonitorRows(await releaseMonitorDb(env).prepare("SELECT value FROM release_monitor_meta WHERE key = 'schema_version'").all())[0];
+  if (!status.last_checked_at || !versionRow || versionRow.value !== RELEASE_MONITOR_SCHEMA_VERSION || now - Number(status.last_checked_at) >= RELEASE_MONITOR_CACHE_MS) {
     try { await refreshReleaseMonitor(env); } catch (error) { await releaseMonitorDb(env).prepare('INSERT INTO release_monitor_state (id, last_checked_at, last_error) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET last_checked_at = excluded.last_checked_at, last_error = excluded.last_error').bind(now, releaseMonitorText(error instanceof Error ? error.message : 'Could not check Microsoft Release Plans.', 240)).run(); }
   }
   var payload = await releaseMonitorPayload(env); var latestStatus = await releaseMonitorStatus(env); payload.checkedAt = latestStatus.last_checked_at ? Number(latestStatus.last_checked_at) : null; payload.lastError = latestStatus.last_error || null;
