@@ -252,7 +252,7 @@ export function ValidatorWorkspace() {
             <Button type="button" className="min-w-32 flex-1" onClick={() => void validate()}><CheckCircle2 className="h-4 w-4" />Validate</Button>
             <Button type="button" variant="secondary" className="min-w-28" onClick={() => fileInput.current?.click()}><Upload className="h-4 w-4" />Upload</Button>
             <Button type="button" variant="secondary" className="min-w-20" disabled={!results.length} onClick={download}><Download className="h-4 w-4" />CSV</Button>
-            <Button type="button" variant="secondary" size="sm" className="h-10 px-3" onClick={clear}><RotateCcw className="h-4 w-4" />Reset</Button>
+            <Button type="button" variant="secondary" size="sm" className="px-3" onClick={clear}><RotateCcw className="h-4 w-4" />Reset</Button>
             <input ref={fileInput} className="hidden" type="file" accept=".csv,text/csv" onChange={upload} />
             <p className="w-full text-xs text-muted-foreground">Mail-domain checks send valid domains only; email addresses stay in your browser.</p>
             {status && <p className="w-full text-xs text-muted-foreground" role="status">{status}</p>}

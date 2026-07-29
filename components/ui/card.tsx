@@ -25,7 +25,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "group/card-header @container/card-header flex h-11 min-h-11 items-center justify-between gap-3 rounded-t-xl px-(--card-spacing) pt-0 pb-1",
+        "group/card-header @container/card-header flex h-10 min-h-10 items-center justify-between gap-3 rounded-t-xl px-(--card-spacing)",
         className
       )}
       {...props}
@@ -38,7 +38,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-title"
       className={cn(
-        "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
+        "font-heading text-base leading-5 font-medium group-data-[size=sm]/card:text-sm",
         className
       )}
       {...props}

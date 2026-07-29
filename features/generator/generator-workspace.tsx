@@ -303,7 +303,7 @@ export function GeneratorWorkspace() {
               </Button>
               {mode === "link" && output && (
                 <a
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+                  className="inline-flex h-8 items-center justify-center gap-2 rounded-[10px] bg-secondary px-3 text-[13px] leading-4 font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
                   href={output}
                   target="_blank"
                   rel="noreferrer"

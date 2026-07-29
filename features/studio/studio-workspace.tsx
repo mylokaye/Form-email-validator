@@ -278,9 +278,9 @@ export function StudioWorkspace() {
             size="lg"
             className="grid w-full grid-cols-3"
           >
-            <ToggleGroupItem value="hero" className="h-[50px] w-full">Hero</ToggleGroupItem>
-            <ToggleGroupItem value="angled" className="h-[50px] w-full">Angled</ToggleGroupItem>
-            <ToggleGroupItem value="custom" className="h-[50px] w-full">Custom</ToggleGroupItem>
+            <ToggleGroupItem value="hero" className="h-8 w-full">Hero</ToggleGroupItem>
+            <ToggleGroupItem value="angled" className="h-8 w-full">Angled</ToggleGroupItem>
+            <ToggleGroupItem value="custom" className="h-8 w-full">Custom</ToggleGroupItem>
           </ToggleGroup>
         </div>
         <div className="grid gap-4">
@@ -293,10 +293,10 @@ export function StudioWorkspace() {
               size="lg"
               className="grid w-full grid-cols-4"
             >
-              <ToggleGroupItem value="16:9" className="h-[50px] w-full">16:9</ToggleGroupItem>
-              <ToggleGroupItem value="1:1" className="h-[50px] w-full">1:1</ToggleGroupItem>
-              <ToggleGroupItem value="4:5" className="h-[50px] w-full">4:5</ToggleGroupItem>
-              <ToggleGroupItem value="9:16" className="h-[50px] w-full">9:16</ToggleGroupItem>
+              <ToggleGroupItem value="16:9" className="h-8 w-full">16:9</ToggleGroupItem>
+              <ToggleGroupItem value="1:1" className="h-8 w-full">1:1</ToggleGroupItem>
+              <ToggleGroupItem value="4:5" className="h-8 w-full">4:5</ToggleGroupItem>
+              <ToggleGroupItem value="9:16" className="h-8 w-full">9:16</ToggleGroupItem>
             </ToggleGroup>
           </div>
           <div>
@@ -308,8 +308,8 @@ export function StudioWorkspace() {
               size="lg"
               className="grid w-full grid-cols-2"
             >
-              <ToggleGroupItem value="contain" className="h-[50px] w-full">Fit</ToggleGroupItem>
-              <ToggleGroupItem value="cover" className="h-[50px] w-full">Fill</ToggleGroupItem>
+              <ToggleGroupItem value="contain" className="h-8 w-full">Fit</ToggleGroupItem>
+              <ToggleGroupItem value="cover" className="h-8 w-full">Fill</ToggleGroupItem>
             </ToggleGroup>
           </div>
         </div>

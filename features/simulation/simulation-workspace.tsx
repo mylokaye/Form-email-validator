@@ -74,7 +74,7 @@ export function SimulationWorkspace() {
             </div>
           </fieldset>
         </div>
-        <div className="flex gap-3"><Button type="button" onClick={() => void run()} disabled={running} className="h-[50px] flex-1"><Play className="h-4 w-4" />{running ? `Running ${events.length}/${rounds}` : 'Run'}</Button><Button type="button" variant="secondary" className="h-[50px]" onClick={reset} disabled={running}><RotateCcw className="h-4 w-4" />Reset</Button></div>
+        <div className="flex gap-3"><Button type="button" onClick={() => void run()} disabled={running} className="flex-1"><Play className="h-4 w-4" />{running ? `Running ${events.length}/${rounds}` : 'Run'}</Button><Button type="button" variant="secondary" onClick={reset} disabled={running}><RotateCcw className="h-4 w-4" />Reset</Button></div>
       </CardContent>
     </Card>
     <Card className="min-h-[560px]">
