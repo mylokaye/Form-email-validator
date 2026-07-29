@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Command, GitBranch, Link2, MessagesSquare, Moon, PanelsTopLeft, Rss, Sun, WandSparkles } from 'lucide-react';
+import { CheckCircle2, Command, GitBranch, Link2, MessagesSquare, Moon, PanelsTopLeft, Rss, Sparkles, Sun, WandSparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Separator } from './ui/separator';
@@ -22,17 +22,26 @@ const tools = [
   { href: '/studio/', label: 'Studio', icon: PanelsTopLeft },
 ];
 
+type Appearance = 'light' | 'dark' | 'glass';
+
+const appearanceOptions: { value: Appearance; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Use light theme', icon: Sun },
+  { value: 'dark', label: 'Use dark theme', icon: Moon },
+  { value: 'glass', label: 'Use glass theme', icon: Sparkles },
+];
+
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [dark, setDark] = useState(false);
+  const [appearance, setAppearance] = useState<Appearance>('light');
   const [commandOpen, setCommandOpen] = useState(false);
   const active = tools.find((tool) => pathname.startsWith(tool.href.slice(0, -1))) ?? tools[0];
 
   useEffect(() => {
     const stored = localStorage.getItem('pattens.theme.v2');
-    const nextDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setDark(nextDark);
-    document.documentElement.classList.toggle('dark', nextDark);
+    const nextAppearance: Appearance = stored === 'glass' || stored === 'dark' || stored === 'light'
+      ? stored
+      : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    applyAppearance(nextAppearance);
   }, []);
   useEffect(() => { void fetch('/api/release-monitor').catch(() => undefined); }, []);
   useEffect(() => {
@@ -42,7 +51,12 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('keydown', onKeyDown); return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
-  const toggleTheme = () => { const next = !dark; setDark(next); localStorage.setItem('pattens.theme.v2', next ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', next); };
+  const applyAppearance = (nextAppearance: Appearance) => {
+    setAppearance(nextAppearance);
+    localStorage.setItem('pattens.theme.v2', nextAppearance);
+    document.documentElement.classList.toggle('dark', nextAppearance === 'dark');
+    document.documentElement.classList.toggle('glass', nextAppearance === 'glass');
+  };
 
   return <TooltipProvider><SidebarProvider>
     <Sidebar collapsible="icon">
@@ -69,7 +83,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
     <SidebarInset>
       <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur">
         <div className="flex items-center gap-2"><SidebarTrigger /><span className="text-sm font-medium md:hidden">Pattens</span></div>
-        <div className="flex items-center gap-1"><Button variant="ghost" size="sm" className="border-0 shadow-none" onClick={() => setCommandOpen(true)} aria-label="Open command menu"><Command className="h-4 w-4" /><span className="hidden sm:inline">Commands</span><kbd className="ml-1 hidden rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground md:inline">⌘ K</kbd></Button><Button variant="ghost" size="icon" className="border-0 shadow-none" onClick={toggleTheme} aria-label={dark ? 'Use light theme' : 'Use dark theme'}>{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</Button></div>
+        <div className="flex items-center gap-1"><Button variant="ghost" size="sm" className="h-8 border-0 px-3 shadow-none" onClick={() => setCommandOpen(true)} aria-label="Open command menu"><Command className="h-4 w-4" /><span className="hidden sm:inline">Commands</span><kbd className="ml-1 hidden rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground md:inline">⌘ K</kbd></Button><div className="flex items-center rounded-lg border border-border/70 bg-background/60 p-0.5" role="group" aria-label="Appearance">{appearanceOptions.map(({ value, label, icon: Icon }) => <Button key={value} variant="ghost" size="icon" className="size-7 rounded-md border-0 shadow-none aria-pressed:bg-background aria-pressed:shadow-sm" onClick={() => applyAppearance(value)} aria-label={label} aria-pressed={appearance === value}><Icon className="h-3.5 w-3.5" /></Button>)}</div></div>
       </header>
       <div className="mx-auto flex w-full max-w-[1600px] flex-1"><div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</div></div>
       <footer className="w-full"><Separator /><div className="mx-auto flex min-h-16 max-w-[1600px] items-center justify-center px-4 text-center text-xs text-muted-foreground sm:px-6 lg:px-8"><p>Copyright 2026</p></div></footer>
