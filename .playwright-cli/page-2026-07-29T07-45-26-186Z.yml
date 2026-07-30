@@ -1,0 +1,22 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - main [ref=e58]:
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - button "Toggle Sidebar" [active] [ref=e216]
+          - generic [ref=e123]: Pattens
+        - generic [ref=e63]:
+          - button "Open command menu" [ref=e217]
+          - group "Appearance" [ref=e218]:
+            - button "Use light theme" [ref=e219]
+            - button "Use dark theme" [ref=e220]
+            - button "Use glass theme" [pressed] [ref=e221]
+      - generic [ref=e115]:
+        - separator [ref=e116]
+        - paragraph [ref=e118]: Copyright 2026
+    - generic [ref=e119]:
+      - heading "Command menu" [level=2] [ref=e222]
+      - paragraph [ref=e121]: Navigate between Pattens tools.
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e129] [cursor=pointer]
+  - alert [ref=e122]
