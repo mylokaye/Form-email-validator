@@ -4,6 +4,7 @@
 
 - Build with Next.js, TypeScript, Tailwind CSS, and the local shadcn components.
 - The Sites build runs through `npm run build`; `scripts/build-site.js` produces the static app and `dist/server/index.js` worker.
+- [`docs/infrastructure.md`](docs/infrastructure.md) is the canonical GitHub-renderable infrastructure diagram. Update its diagram and **Updated on** date in the same change set whenever deployment, Worker routes, persistent data, secrets, external integrations, or browser-to-server request paths change.
 - Keep interactions client-side unless a hosted worker endpoint is essential. The MX lookup uses `/api/mx`; Simulation generation uses `/api/simulate`.
 - Never put secrets in client-side code.
 - The production DeepSeek credential is managed only in Sites as the `deepseek` secret. The worker may also accept `DEEPSEEK_API_KEY` for compatibility; never add either value to source or local client configuration.

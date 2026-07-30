@@ -28,6 +28,8 @@ npm run build
 
 `npm run build` exports the static application and emits the Sites worker at `dist/server/index.js`.
 
+The current deployment and service topology is documented in [Infrastructure](docs/infrastructure.md).
+
 ## Project structure
 
 - `app/` — Next.js routes and layout.
