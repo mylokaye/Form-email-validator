@@ -2,6 +2,58 @@
 
 Pattens is a privacy-focused campaign-operations toolkit built with Next.js, TypeScript, Tailwind CSS, and shadcn/ui. It is prepared for static hosting with a small Sites worker for MX lookups and proposal simulations.
 
+# Pattens infrastructure
+
+**Updated on:** 2026-07-30
+
+This diagram describes the current build and runtime infrastructure. Update both the diagram and the date above whenever a change affects deployment, runtime services, API routes, data stores, secrets, or external integrations.
+
+```mermaid
+flowchart TB
+  Developer["Developer"]
+  GitHub["GitHub repository"]
+  Validation["Validation: npm test"]
+  Build["Build adapter: npm run build / scripts/build-site.js"]
+
+  Developer --> GitHub
+  GitHub --> Validation --> Build
+
+  subgraph Sites["OpenAI Sites deployment"]
+    Static["Static Next.js app: HTML, JS, CSS, assets"]
+    Worker["Edge Worker: dist/server/index.js"]
+
+    Static -->|same-origin API requests| Worker
+  end
+
+  Build --> Static
+  Build --> Worker
+
+  Browser["User browser"] -->|HTTPS| Static
+
+  subgraph APIs["Worker API routes"]
+    MX["POST /api/mx"]
+    URL["POST /api/url-check"]
+    News["GET /api/news and /api/news/sources"]
+    Monitor["GET /api/release-monitor"]
+    Simulate["POST /api/simulate"]
+  end
+
+  Worker --> MX
+  Worker --> URL
+  Worker --> News
+  Worker --> Monitor
+  Worker --> Simulate
+
+  MX -->|DNS-over-HTTPS| CloudflareDNS["Cloudflare DNS"]
+  URL -->|safe HEAD or limited GET| PublicWeb["Validated public URLs"]
+  News --> NewsSources["Configured news sources"]
+  Monitor --> Microsoft["Microsoft Release Planner JSON"]
+  Monitor <--> D1["D1: release_monitor_state"]
+  Simulate -->|server-side credential| DeepSeek["DeepSeek Chat Completions"]
+
+  Secret["Sites secret: deepseek or DEEPSEEK_API_KEY"] -. available only to .-> Worker
+```
+
 ## Tools
 
 - **Generate** — Create campaign URLs, campaign names, and survey URLs.
