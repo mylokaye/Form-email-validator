@@ -1,3 +1,5 @@
+![Pattens](https://repository-images.githubusercontent.com/1092868979/c7b3c1bd-84c5-4b5e-b284-31f113740ad6
+
 # Pattens
 
 Pattens is a privacy-focused campaign-operations toolkit built with Next.js, TypeScript, Tailwind CSS, and shadcn/ui. It is prepared for static hosting with a small Sites worker for MX lookups and proposal simulations.
