@@ -9,6 +9,7 @@ out/
 .env*.local
 .DS_Store
 *.log
+.playwright-cli/
 
 # Jest coverage
 coverage/
