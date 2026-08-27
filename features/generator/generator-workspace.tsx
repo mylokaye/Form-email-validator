@@ -18,13 +18,12 @@ import {
 
 const emptyLink: LinkValues = {
   baseUrl: "http://google.com",
-  trackingType: "MTM",
+  trackingTypes: ["MTM"],
   source: "",
   medium: "",
   campaign: "",
   content: "",
   term: "",
-  crmCampaign: "",
 };
 const emptyCampaign: CampaignValues = {
   business: "",
@@ -87,8 +86,14 @@ export function GeneratorWorkspace() {
     if (mode === "campaign") setCampaign(emptyCampaign);
     if (mode === "survey") setSurvey(emptySurvey);
   };
-  const linkSet = (key: keyof LinkValues, value: string) =>
+  const linkSet = (key: Exclude<keyof LinkValues, "trackingTypes">, value: string) =>
     setLink((current) => ({ ...current, [key]: value }));
+  const toggleTrackingType = (type: TrackingType) =>
+    setLink((current) => {
+      const selected = current.trackingTypes.includes(type);
+      if (selected && current.trackingTypes.length === 1) return current;
+      return { ...current, trackingTypes: selected ? current.trackingTypes.filter((candidate) => candidate !== type) : [...current.trackingTypes, type] };
+    });
   const setLinkUrl = (value: string) => {
     urlValidationRequest.current += 1;
     setUrlValidation("idle");
@@ -150,13 +155,6 @@ export function GeneratorWorkspace() {
                     value={link.baseUrl}
                     onChange={setLinkUrl}
                   />
-                  <div className="flex min-h-8 items-center gap-3">
-                    <Button type="button" variant="secondary" size="sm" onClick={() => void validateUrl()} disabled={urlValidation === "loading"}>
-                      {urlValidation === "loading" ? "Validating…" : "Validate"}
-                    </Button>
-                    {urlValidation === "success" && <p className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700" role="status"><Check className="h-4 w-4" />URL validated</p>}
-                    {urlValidation === "error" && <p className="text-sm text-destructive" role="alert">Could not validate this URL.</p>}
-                  </div>
                 </div>
                 <Field
                   label="Source"
@@ -174,17 +172,12 @@ export function GeneratorWorkspace() {
                   onChange={(value) => linkSet("campaign", value)}
                 />
                 <Field
-                  label="CRM campaign"
-                  value={link.crmCampaign}
-                  onChange={(value) => linkSet("crmCampaign", value)}
-                />
-                <Field
-                  label="Content (advanced)"
+                  label="Content"
                   value={link.content}
                   onChange={(value) => linkSet("content", value)}
                 />
                 <Field
-                  label="Term (advanced)"
+                  label="Term"
                   value={link.term}
                   onChange={(value) => linkSet("term", value)}
                 />
@@ -195,10 +188,10 @@ export function GeneratorWorkspace() {
                       type="button"
                       size="sm"
                       variant={
-                        link.trackingType === type ? "default" : "secondary"
+                        link.trackingTypes.includes(type) ? "default" : "secondary"
                       }
-                      onClick={() => linkSet("trackingType", type)}
-                      aria-pressed={link.trackingType === type}
+                      onClick={() => toggleTrackingType(type)}
+                      aria-pressed={link.trackingTypes.includes(type)}
                     >
                       {type}
                     </Button>
@@ -293,6 +286,9 @@ export function GeneratorWorkspace() {
               {output}
             </output>
             <div className="mt-4 flex flex-wrap gap-2">
+              {mode === "link" && <Button type="button" variant="secondary" onClick={() => void validateUrl()} disabled={urlValidation === "loading"}>
+                {urlValidation === "loading" ? "Validating…" : "Validate"}
+              </Button>}
               <Button onClick={copy} disabled={!output}>
                 {copied ? (
                   <Check className="h-4 w-4" />
@@ -316,6 +312,8 @@ export function GeneratorWorkspace() {
                 <RotateCcw className="h-4 w-4" />
                 Clear
               </Button>
+              {urlValidation === "success" && <p className="inline-flex h-8 items-center gap-1.5 text-sm font-medium text-emerald-700" role="status"><Check className="h-4 w-4" />URL validated</p>}
+              {urlValidation === "error" && <p className="flex h-8 items-center text-sm text-destructive" role="alert">Could not validate this URL.</p>}
             </div>
           </CardContent>
         </Card>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Command, GitBranch, Link2, MessagesSquare, Moon, PanelsTopLeft, Rss, Sparkles, Sun, WandSparkles } from 'lucide-react';
+import { CheckCircle2, Command, Link2, MessagesSquare, PanelsTopLeft, Rss, Sparkles, Sun, WandSparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Separator } from './ui/separator';
@@ -14,7 +14,6 @@ import { cn } from '../lib/utils';
 
 const tools = [
   { href: '/generate/', label: 'Generate', icon: WandSparkles },
-  { href: '/convert/', label: 'Convert', icon: GitBranch },
   { href: '/validate/', label: 'Validate', icon: CheckCircle2 },
   { href: '/news/', label: 'News', icon: Rss },
   { href: '/logic/', label: 'Logic', icon: Link2 },
@@ -22,11 +21,10 @@ const tools = [
   { href: '/studio/', label: 'Studio', icon: PanelsTopLeft },
 ];
 
-type Appearance = 'light' | 'dark' | 'glass';
+type Appearance = 'light' | 'glass';
 
 const appearanceOptions: { value: Appearance; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Use light theme', icon: Sun },
-  { value: 'dark', label: 'Use dark theme', icon: Moon },
   { value: 'glass', label: 'Use glass theme', icon: Sparkles },
 ];
 
@@ -43,7 +41,7 @@ function WorkspaceContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem('pattens.theme.v3');
-    const nextAppearance: Appearance = stored === 'glass' || stored === 'dark' || stored === 'light'
+    const nextAppearance: Appearance = stored === 'glass' || stored === 'light'
       ? stored
       : 'glass';
     applyAppearance(nextAppearance);
@@ -59,7 +57,7 @@ function WorkspaceContent({ children }: { children: React.ReactNode }) {
   const applyAppearance = (nextAppearance: Appearance) => {
     setAppearance(nextAppearance);
     localStorage.setItem('pattens.theme.v3', nextAppearance);
-    document.documentElement.classList.toggle('dark', nextAppearance === 'dark');
+    document.documentElement.classList.remove('dark');
     document.documentElement.classList.toggle('glass', nextAppearance === 'glass');
   };
 
