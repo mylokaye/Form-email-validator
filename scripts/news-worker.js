@@ -91,8 +91,9 @@ function isPrivateNewsHost(hostname) {
   return first === 0 || first === 10 || first === 127 || first === 169 && second === 254 || first === 172 && second >= 16 && second <= 31 || first === 192 && second === 168;
 }
 
-async function fetchNewsUrl(value, accept) {
+async function fetchNewsUrl(value, accept, maxBytes) {
   var url = normaliseNewsUrl(value);
+  var responseLimit = maxBytes || 1024 * 1024;
   if (!url) throw new Error('Use a public HTTPS URL.');
   for (var attempt = 0; attempt < 4; attempt += 1) {
     var response = await fetch(url, { headers: { accept: accept, 'user-agent': 'Pattens News Feed/1.0' }, redirect: 'manual', signal: AbortSignal.timeout(8000) });
@@ -103,9 +104,9 @@ async function fetchNewsUrl(value, accept) {
     }
     if (!response.ok) throw new Error('The source returned HTTP ' + response.status + '.');
     var contentLength = Number(response.headers.get('content-length') || 0);
-    if (contentLength > 1024 * 1024) throw new Error('The source response is too large.');
+    if (contentLength > responseLimit) throw new Error('The source response is too large.');
     var text = await response.text();
-    if (text.length > 1024 * 1024) throw new Error('The source response is too large.');
+    if (text.length > responseLimit) throw new Error('The source response is too large.');
     return { text: text, url: url };
   }
   throw new Error('The source redirected too many times.');

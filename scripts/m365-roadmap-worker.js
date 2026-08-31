@@ -12,7 +12,7 @@ async function handleM365Roadmap(request) {
   var now = Date.now();
   if (m365RoadmapCache.payload && m365RoadmapCache.expiresAt > now) return json(m365RoadmapCache.payload);
   try {
-    var fetched = await fetchNewsUrl(M365_ROADMAP_FEED_URL, 'application/rss+xml, application/atom+xml, application/xml, text/xml');
+    var fetched = await fetchNewsUrl(M365_ROADMAP_FEED_URL, 'application/rss+xml, application/atom+xml, application/xml, text/xml', 5 * 1024 * 1024);
     var items = parseFeed(fetched.text, fetched.url, 500).map(function (item) {
       return { id: item.externalId, title: item.title, summary: item.summary, url: item.url, publishedAt: item.publishedAt, updatedAt: item.updatedAt, categories: item.categories, status: m365RoadmapStatus(item.categories) };
     }).sort(function (a, b) { return b.updatedAt - a.updatedAt || b.publishedAt - a.publishedAt; }).slice(0, 100);
