@@ -13,7 +13,7 @@ type NewsStoriesProps = {
   limit?: number;
   sourceFilterLabels?: Record<string, string>;
   title: string;
-  description: string;
+  description?: string;
   showViewAll?: boolean;
   showSourceFilter?: boolean;
 };
@@ -70,7 +70,7 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, title, des
       <CardHeader className="border-b">
         <div className="min-w-0">
           <CardTitle>{title}</CardTitle>
-          <CardDescription className="mt-1">{description}</CardDescription>
+          {description && <CardDescription className="mt-1">{description}</CardDescription>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {showViewAll && <Button nativeButton={false} variant="link" size="sm" render={<Link href="/news/" />}>View all<ArrowRight data-icon="inline-end" /></Button>}
