@@ -3,7 +3,7 @@ var NEWS_MAX_SOURCES = 25;
 var NEWS_ITEMS_PER_SOURCE = 20;
 var NEWS_RESPONSE_LIMIT = 100;
 var NEWS_REFRESH_PER_REQUEST = 3;
-var NEWS_DEFAULT_SOURCE = { name: 'Meghan', homepageUrl: 'https://meganvwalker.com/', feedUrl: 'https://meganvwalker.com/feed' };
+var NEWS_DEFAULT_SOURCE = { name: 'Meghan', homepageUrl: 'https://meganvwalker.com/', feedUrl: 'https://meganvwalker.com/feed/' };
 var newsSchemaReady = false;
 
 function newsError(message, status) { return json({ error: message }, status || 400); }
@@ -22,7 +22,20 @@ async function ensureNewsSchema(env) {
     db.prepare('CREATE TABLE IF NOT EXISTS feed_items (id INTEGER PRIMARY KEY AUTOINCREMENT, source_id INTEGER NOT NULL REFERENCES feed_sources(id) ON DELETE CASCADE, external_id TEXT NOT NULL, url TEXT NOT NULL, title TEXT NOT NULL, summary TEXT, published_at INTEGER NOT NULL, created_at INTEGER NOT NULL, UNIQUE(source_id, external_id))'),
     db.prepare('CREATE INDEX IF NOT EXISTS feed_items_published_at_idx ON feed_items(published_at)'),
   ]);
-  await db.prepare('INSERT OR IGNORE INTO feed_sources (name, homepage_url, feed_url, is_active, last_checked_at, last_error, created_at, updated_at) VALUES (?, ?, ?, 1, NULL, NULL, ?, ?)').bind(NEWS_DEFAULT_SOURCE.name, NEWS_DEFAULT_SOURCE.homepageUrl, NEWS_DEFAULT_SOURCE.feedUrl, newsNow(), newsNow()).run();
+  var defaultSources = newsRows(await db.prepare('SELECT id, feed_url, (SELECT COUNT(*) FROM feed_items WHERE feed_items.source_id = feed_sources.id) AS item_count FROM feed_sources WHERE feed_url IN (?, ?) ORDER BY item_count DESC, id ASC').bind('https://meganvwalker.com/feed', NEWS_DEFAULT_SOURCE.feedUrl).all());
+  if (defaultSources.length) {
+    var primarySourceId = Number(defaultSources[0].id);
+    for (var sourceIndex = 1; sourceIndex < defaultSources.length; sourceIndex += 1) {
+      var duplicateSourceId = Number(defaultSources[sourceIndex].id);
+      await db.batch([
+        db.prepare('DELETE FROM feed_items WHERE source_id = ?').bind(duplicateSourceId),
+        db.prepare('DELETE FROM feed_sources WHERE id = ?').bind(duplicateSourceId),
+      ]);
+    }
+    await db.prepare('UPDATE feed_sources SET name = ?, homepage_url = ?, feed_url = ? WHERE id = ?').bind(NEWS_DEFAULT_SOURCE.name, NEWS_DEFAULT_SOURCE.homepageUrl, NEWS_DEFAULT_SOURCE.feedUrl, primarySourceId).run();
+  } else {
+    await db.prepare('INSERT INTO feed_sources (name, homepage_url, feed_url, is_active, last_checked_at, last_error, created_at, updated_at) VALUES (?, ?, ?, 1, NULL, NULL, ?, ?)').bind(NEWS_DEFAULT_SOURCE.name, NEWS_DEFAULT_SOURCE.homepageUrl, NEWS_DEFAULT_SOURCE.feedUrl, newsNow(), newsNow()).run();
+  }
   newsSchemaReady = true;
 }
 
