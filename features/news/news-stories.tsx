@@ -64,7 +64,6 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, title, des
   }, [initialData]);
 
   const visibleItems = typeof limit === 'number' ? data.items.slice(0, limit) : data.items;
-  const hasMore = typeof limit === 'number' && data.items.length > limit;
 
   return (
     <Card>
@@ -74,7 +73,6 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, title, des
           <CardDescription className="mt-1">{description}</CardDescription>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {hasMore && <span className="hidden text-xs text-muted-foreground sm:inline">{data.items.length - limit!} older</span>}
           {showViewAll && <Button nativeButton={false} variant="link" size="sm" render={<Link href="/news/" />}>View all<ArrowRight data-icon="inline-end" /></Button>}
         </div>
       </CardHeader>
@@ -102,8 +100,8 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, title, des
             {visibleItems.map((item) => (
               <Card key={item.id} size="sm" className="h-full bg-background/45 transition-colors hover:bg-muted/40">
                 <CardContent className="flex h-full flex-col gap-4 p-4">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"><a href={item.sourceUrl} target="_blank" rel="noreferrer" className="font-medium text-foreground hover:underline">{item.sourceName}</a><span aria-hidden="true">·</span><span>{displayDate(item.publishedAt)}</span></div>
                   <a href={item.url} target="_blank" rel="noreferrer" className="group flex flex-1 flex-col gap-2"><h2 className="text-base font-semibold leading-6 group-hover:text-primary">{displayTitle(item.title, typeof limit === 'number')}{' '}<ExternalLink className="ml-1.5 inline size-3.5" /></h2>{item.summary && <p className="line-clamp-4 text-sm leading-6 text-muted-foreground">{item.summary}</p>}</a>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"><a href={item.sourceUrl} target="_blank" rel="noreferrer" className="font-medium text-foreground hover:underline">{item.sourceName}</a><span aria-hidden="true">·</span><span>{displayDate(item.publishedAt)}</span></div>
                 </CardContent>
               </Card>
             ))}

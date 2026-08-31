@@ -4,7 +4,7 @@ import { ExternalLink, RefreshCw, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { RoadmapResponse } from '@/features/home/roadmap-data';
 
 const emptyData: RoadmapResponse = { items: [], sourceName: 'Microsoft 365 Roadmap', sourceUrl: '', refreshedAt: 0 };
@@ -54,7 +54,6 @@ export function RoadmapUpdates({ initialData }: { initialData: RoadmapResponse |
           <Sparkles className="size-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0">
             <CardTitle>Microsoft 365 roadmap</CardTitle>
-            <CardDescription className="mt-1">The three most recently updated roadmap items.</CardDescription>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -72,7 +71,7 @@ export function RoadmapUpdates({ initialData }: { initialData: RoadmapResponse |
         {loading && <div className="flex min-h-40 items-center justify-center text-sm text-muted-foreground">Refreshing the Microsoft 365 roadmap…</div>}
         {!loading && !error && visibleItems.length === 0 && <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">No roadmap updates match this filter.</div>}
         {!loading && !error && visibleItems.length > 0 && <div className="grid gap-4 md:grid-cols-3">
-          {visibleItems.map((item) => <Card key={item.id} size="sm" className="h-full bg-background/45 transition-colors hover:bg-muted/40"><CardContent className="flex h-full flex-col gap-4 p-4"><div className="flex items-center justify-between gap-3"><Badge>{item.status || 'Roadmap update'}</Badge><span className="text-right text-xs text-muted-foreground">{displayDate(item.updatedAt)}</span></div><a href={item.url} target="_blank" rel="noreferrer" className="group flex flex-1 flex-col gap-2"><h2 className="text-base font-semibold leading-6 group-hover:text-primary">{item.title}<ExternalLink className="ml-1.5 inline size-3.5" /></h2><p className="line-clamp-4 text-sm leading-6 text-muted-foreground">{item.summary}</p></a></CardContent></Card>)}
+          {visibleItems.map((item) => <Card key={item.id} size="sm" className="h-full bg-background/45 transition-colors hover:bg-muted/40"><CardContent className="flex h-full flex-col gap-4 p-4"><a href={item.url} target="_blank" rel="noreferrer" className="group flex flex-1 flex-col gap-2"><h2 className="text-base font-semibold leading-6 group-hover:text-primary">{item.title}<ExternalLink className="ml-1.5 inline size-3.5" /></h2><p className="line-clamp-4 text-sm leading-6 text-muted-foreground">{item.summary}</p></a><div className="flex items-center justify-between gap-3"><Badge>{item.status || 'Roadmap update'}</Badge><span className="text-right text-xs text-muted-foreground">{displayDate(item.updatedAt)}</span></div></CardContent></Card>)}
         </div>}
       </CardContent>
     </Card>
