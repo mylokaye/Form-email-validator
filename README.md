@@ -71,7 +71,7 @@ flowchart TB
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Then open [http://localhost:3000](http://localhost:3000). During local development, Home and News server-render the current public stories and release-plan data; the Home page reads the Microsoft 365 roadmap RSS and [Meghan Walker RSS](https://meganvwalker.com/feed) feeds directly. Owner-only source management remains available only on the deployed worker.
 
 ## Verify and build
 

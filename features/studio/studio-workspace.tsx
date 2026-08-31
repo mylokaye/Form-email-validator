@@ -57,6 +57,7 @@ const defaults: StudioSettings = {
 };
 
 const ratios: Record<Ratio, number> = { '16:9': 16 / 9, '1:1': 1, '4:5': 4 / 5, '9:16': 9 / 16 };
+const PREVIEW_WIDTH = 1200;
 
 function savedSettings(): StudioSettings {
   if (typeof window === 'undefined') return defaults;
@@ -146,9 +147,14 @@ function disposeScene(scene: THREE.Scene) {
   });
 }
 
-function renderWebGLScene(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasElement, image: HTMLImageElement | null, settings: StudioSettings, multiplier = 1) {
-  const width = 1600 * multiplier;
-  const height = Math.round(width / ratios[settings.ratio]);
+function renderWebGLScene(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasElement, image: HTMLImageElement | null, settings: StudioSettings, multiplier = 1, baseWidth = 1600) {
+  const requestedWidth = baseWidth * multiplier;
+  const requestedHeight = Math.round(requestedWidth / ratios[settings.ratio]);
+  const context = renderer.getContext();
+  const maxRenderDimension = Math.min(renderer.capabilities.maxTextureSize, Number(context.getParameter(context.MAX_RENDERBUFFER_SIZE)));
+  const scale = Math.min(1, maxRenderDimension / Math.max(requestedWidth, requestedHeight));
+  const width = Math.max(1, Math.floor(requestedWidth * scale));
+  const height = Math.max(1, Math.round(width / ratios[settings.ratio]));
   renderer.setPixelRatio(1);
   renderer.setSize(width, height, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -187,14 +193,19 @@ function renderWebGLScene(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasEleme
   camera.lookAt(0, 0, 0);
   renderer.render(scene, camera);
   disposeScene(scene);
+  return { width, height, scaled: scale < 1 };
 }
 
 export function StudioWorkspace() {
   const [settings, setSettings] = useState<StudioSettings>(defaults);
   const [source, setSource] = useState('');
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const settingsRef = useRef(settings);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
   useEffect(() => {
@@ -203,6 +214,31 @@ export function StudioWorkspace() {
   }, []);
 
   useEffect(() => { localStorage.setItem(storageKey, JSON.stringify(settings)); }, [settings]);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+
+  useEffect(() => {
+    let active = true;
+    imageRef.current = null;
+    setImage(null);
+    setExportStatus('');
+    if (!source) return () => { active = false; };
+
+    const nextImage = new Image();
+    nextImage.onload = () => {
+      if (!active) return;
+      imageRef.current = nextImage;
+      setImage(nextImage);
+    };
+    nextImage.onerror = () => {
+      if (active) setExportStatus('The selected image could not be decoded.');
+    };
+    nextImage.src = source;
+    return () => {
+      active = false;
+      nextImage.onload = null;
+      nextImage.onerror = null;
+    };
+  }, [source]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -216,18 +252,11 @@ export function StudioWorkspace() {
     const canvas = canvasRef.current;
     const renderer = rendererRef.current;
     if (!canvas || !renderer) return;
-    if (!source) {
-      imageRef.current = null;
-      renderWebGLScene(renderer, canvas, null, settings);
-      return;
-    }
-    const image = new Image();
-    image.onload = () => {
-      imageRef.current = image;
-      renderWebGLScene(renderer, canvas, image, settings);
-    };
-    image.src = source;
-  }, [settings, source]);
+    const frame = window.requestAnimationFrame(() => {
+      renderWebGLScene(renderer, canvas, image, settings, 1, PREVIEW_WIDTH);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [settings, image]);
 
   const update = <Key extends keyof StudioSettings>(key: Key, value: StudioSettings[Key]) => setSettings((current) => ({ ...current, [key]: value, ...(['tiltX', 'tiltY', 'roll', 'fov', 'panX', 'panY'].includes(key) ? { preset: 'custom' as Preset } : {}) }));
   const applyPreset = (preset: Preset) => setSettings((current) => preset === 'hero' ? { ...current, ...heroPreset, preset } : preset === 'angled' ? { ...current, ...angledPreset, preset } : { ...current, preset });
@@ -250,13 +279,36 @@ export function StudioWorkspace() {
   const download = (multiplier: number) => {
     const canvas = canvasRef.current;
     const renderer = rendererRef.current;
-    if (!canvas || !renderer) return;
-    renderWebGLScene(renderer, canvas, imageRef.current, settings, multiplier);
-    const link = document.createElement('a');
-    link.download = `pattens-studio-${settings.ratio.replace(':', 'x')}-${multiplier}x.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    renderWebGLScene(renderer, canvas, imageRef.current, settings);
+    if (!canvas || !renderer || exporting) return;
+    const exportImage = imageRef.current;
+    const exportSettings = settings;
+    const restorePreview = () => {
+      try { renderWebGLScene(renderer, canvas, imageRef.current, settingsRef.current, 1, PREVIEW_WIDTH); } catch { /* The renderer may have been lost during export. */ }
+      setExporting(false);
+    };
+    setExporting(true);
+    setExportStatus('');
+    try {
+      const rendered = renderWebGLScene(renderer, canvas, exportImage, exportSettings, multiplier);
+      canvas.toBlob((blob) => {
+        try {
+          if (!blob) throw new Error('PNG export was unavailable.');
+          const link = document.createElement('a');
+          link.download = `pattens-studio-${exportSettings.ratio.replace(':', 'x')}-${multiplier}x.png`;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(link.href), 0);
+          setExportStatus(rendered.scaled ? `Export capped at ${rendered.width}×${rendered.height} for this device.` : 'PNG downloaded.');
+        } catch {
+          setExportStatus('PNG export was unavailable.');
+        } finally {
+          restorePreview();
+        }
+      }, 'image/png');
+    } catch {
+      setExportStatus('PNG export was unavailable.');
+      restorePreview();
+    }
   };
 
   return <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] lg:items-start">
@@ -345,12 +397,13 @@ export function StudioWorkspace() {
       <CardHeader className="border-b">
         <CardTitle>Preview</CardTitle>
         <div className="flex items-center gap-2">
-          {[1, 2, 3].map((multiplier) => <Button key={multiplier} type="button" size="sm" className="h-8 px-2" onClick={() => download(multiplier)} disabled={!source}><Download data-icon="inline-start" />{multiplier}x PNG</Button>)}
+          {[1, 2, 3].map((multiplier) => <Button key={multiplier} type="button" size="sm" className="h-8 px-2" onClick={() => download(multiplier)} disabled={!source || exporting}><Download data-icon="inline-start" />{exporting ? 'Exporting…' : `${multiplier}x PNG`}</Button>)}
         </div>
       </CardHeader>
       <CardContent className="grid gap-4 pt-4">
         <div className="overflow-hidden rounded-lg border border-border bg-secondary/20">
           <canvas ref={canvasRef} className="block h-auto w-full" aria-label="Studio mockup preview" />
+          {exportStatus && <p className="px-3 pb-3 text-xs text-muted-foreground" role="status">{exportStatus}</p>}
         </div>
       </CardContent>
     </Card>
