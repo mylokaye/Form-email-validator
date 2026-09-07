@@ -27,6 +27,7 @@ const emptyLink: LinkValues = {
   term: "",
   dynamicsNoCache: false,
   simple: false,
+  tradeshow: false,
 };
 const emptyCampaign: CampaignValues = {
   business: "",
@@ -90,7 +91,7 @@ export function GeneratorWorkspace() {
     if (mode === "campaign") setCampaign(emptyCampaign);
     if (mode === "survey") setSurvey(emptySurvey);
   };
-  const linkSet = (key: Exclude<keyof LinkValues, "trackingTypes" | "dynamicsNoCache" | "simple">, value: string) =>
+  const linkSet = (key: Exclude<keyof LinkValues, "trackingTypes" | "dynamicsNoCache" | "simple" | "tradeshow">, value: string) =>
     setLink((current) => ({ ...current, [key]: value }));
   const toggleTrackingType = (type: TrackingType) =>
     setLink((current) => {
@@ -213,6 +214,15 @@ export function GeneratorWorkspace() {
                     aria-pressed={link.simple}
                   >
                     Simple
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={link.tradeshow ? "default" : "secondary"}
+                    onClick={() => setLink((current) => ({ ...current, tradeshow: !current.tradeshow }))}
+                    aria-pressed={link.tradeshow}
+                  >
+                    Tradeshow
                   </Button>
                   {dynamicsDetected && (
                     <Button

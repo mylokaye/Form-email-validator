@@ -1,6 +1,6 @@
 export type TrackingType = 'MTM' | 'UTM';
 
-export type LinkValues = { baseUrl: string; trackingTypes: TrackingType[]; source: string; medium: string; campaign: string; content: string; term: string; dynamicsNoCache: boolean; simple: boolean; };
+export type LinkValues = { baseUrl: string; trackingTypes: TrackingType[]; source: string; medium: string; campaign: string; content: string; term: string; dynamicsNoCache: boolean; simple: boolean; tradeshow: boolean; };
 export type CampaignValues = { business: string; year: string; region: string; descriptor: string; salesplay: string; language: string; };
 export type SurveyValues = { baseUrl: string; lang: string; journey: string; lob: string; campaign: string; medium: string; content: string; };
 
@@ -21,6 +21,7 @@ export function buildLinkUrl(values: LinkValues) {
     const prefix = type === 'UTM' ? 'utm' : 'mtm';
     ([[`${prefix}_source`, values.source], [`${prefix}_medium`, values.medium], [`${prefix}_campaign`, values.campaign], [`${prefix}_content`, values.content], [`${prefix}_term`, values.term]] as const).forEach(([key, value]) => { const normalized = value.trim().toUpperCase(); if (normalized) url.searchParams.set(key, normalized); });
   });
+  if (values.tradeshow) url.searchParams.set('mtm_medium', 'tradeshow');
   const generated = url.toString();
   const flags = [values.simple ? 'simple' : '', isDynamicsMarketingUrl && values.dynamicsNoCache ? 'd365mkt-nocache' : ''].filter(Boolean);
   return flags.length ? `${generated}${url.search ? '&' : '?'}${flags.join('&')}` : generated;
