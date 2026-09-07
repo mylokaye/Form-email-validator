@@ -10,6 +10,7 @@ import {
   buildHighlightUrl,
   buildLinkUrl,
   buildSurveyUrl,
+  isDynamicsUrl,
   type CampaignValues,
   type LinkValues,
   type SurveyValues,
@@ -24,6 +25,8 @@ const emptyLink: LinkValues = {
   campaign: "",
   content: "",
   term: "",
+  dynamicsNoCache: false,
+  simple: false,
 };
 const emptyCampaign: CampaignValues = {
   business: "",
@@ -52,6 +55,7 @@ export function GeneratorWorkspace() {
   const [copied, setCopied] = useState(false);
   const [urlValidation, setUrlValidation] = useState<"idle" | "loading" | "success" | "error">("idle");
   const urlValidationRequest = useRef(0);
+  const dynamicsDetected = isDynamicsUrl(link.baseUrl);
   const output = useMemo(
     () =>
       mode === "link"
@@ -86,7 +90,7 @@ export function GeneratorWorkspace() {
     if (mode === "campaign") setCampaign(emptyCampaign);
     if (mode === "survey") setSurvey(emptySurvey);
   };
-  const linkSet = (key: Exclude<keyof LinkValues, "trackingTypes">, value: string) =>
+  const linkSet = (key: Exclude<keyof LinkValues, "trackingTypes" | "dynamicsNoCache" | "simple">, value: string) =>
     setLink((current) => ({ ...current, [key]: value }));
   const toggleTrackingType = (type: TrackingType) =>
     setLink((current) => {
@@ -97,7 +101,7 @@ export function GeneratorWorkspace() {
   const setLinkUrl = (value: string) => {
     urlValidationRequest.current += 1;
     setUrlValidation("idle");
-    linkSet("baseUrl", value);
+    setLink((current) => ({ ...current, baseUrl: value, dynamicsNoCache: isDynamicsUrl(value) ? current.dynamicsNoCache : false }));
   };
   const validateUrl = async () => {
     const requestId = urlValidationRequest.current + 1;
@@ -197,6 +201,26 @@ export function GeneratorWorkspace() {
                     </Button>
                   ))}
                 </div>
+                {dynamicsDetected && (
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={link.dynamicsNoCache}
+                      onChange={(event) => setLink((current) => ({ ...current, dynamicsNoCache: event.target.checked }))}
+                      className="size-4 accent-primary"
+                    />
+                    Add Dynamics no-cache parameter
+                  </label>
+                )}
+                <label className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={link.simple}
+                    onChange={(event) => setLink((current) => ({ ...current, simple: event.target.checked }))}
+                    className="size-4 accent-primary"
+                  />
+                  Add simple parameter
+                </label>
               </>
             )}
             {mode === "campaign" && (
