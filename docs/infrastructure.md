@@ -1,6 +1,6 @@
 # Pattens infrastructure
 
-**Updated on:** 2026-08-31
+**Updated on:** 2026-09-07
 
 This diagram describes the current build and runtime infrastructure. Update both the diagram and the date above whenever a change affects deployment, runtime services, API routes, data stores, secrets, or external integrations.
 
@@ -33,7 +33,7 @@ flowchart TB
   subgraph APIs["Worker API routes"]
     MX["POST /api/mx"]
     URL["POST /api/url-check"]
-    News["GET /api/news and /api/news/sources"]
+    News["GET /api/news; read-only /api/news/sources"]
     Monitor["GET /api/release-monitor"]
     Roadmap["GET /api/m365-roadmap"]
     Simulate["POST /api/simulate"]
@@ -50,6 +50,7 @@ flowchart TB
   URL -->|safe HEAD or limited GET| PublicWeb["Validated public URLs"]
   News --> NewsSources["Configured news sources"]
   NewsSources --> MeghanFeed["Meghan Walker RSS"]
+  NewsSources --> AmeyFeed["Amey Holden Articles RSS"]
   Monitor --> Microsoft["Microsoft Release Planner JSON"]
   Roadmap --> M365RoadmapFeed["Microsoft 365 Roadmap RSS"]
   Monitor <--> D1["D1: release_monitor_state"]

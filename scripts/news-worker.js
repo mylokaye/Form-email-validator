@@ -1,9 +1,11 @@
 var NEWS_CACHE_MS = 15 * 60 * 1000;
-var NEWS_MAX_SOURCES = 25;
 var NEWS_ITEMS_PER_SOURCE = 20;
 var NEWS_RESPONSE_LIMIT = 100;
 var NEWS_REFRESH_PER_REQUEST = 3;
-var NEWS_DEFAULT_SOURCE = { name: 'Meghan', homepageUrl: 'https://meganvwalker.com/', feedUrl: 'https://meganvwalker.com/feed/' };
+var NEWS_DEFAULT_SOURCES = [
+  { name: 'Meghan', homepageUrl: 'https://meganvwalker.com/', feedUrl: 'https://meganvwalker.com/feed/' },
+  { name: 'Amey Holden', homepageUrl: 'https://www.ameyholden.com/articles/', feedUrl: 'https://www.ameyholden.com/articles?format=rss' },
+];
 var newsSchemaReady = false;
 
 function newsError(message, status) { return json({ error: message }, status || 400); }
@@ -22,19 +24,24 @@ async function ensureNewsSchema(env) {
     db.prepare('CREATE TABLE IF NOT EXISTS feed_items (id INTEGER PRIMARY KEY AUTOINCREMENT, source_id INTEGER NOT NULL REFERENCES feed_sources(id) ON DELETE CASCADE, external_id TEXT NOT NULL, url TEXT NOT NULL, title TEXT NOT NULL, summary TEXT, published_at INTEGER NOT NULL, created_at INTEGER NOT NULL, UNIQUE(source_id, external_id))'),
     db.prepare('CREATE INDEX IF NOT EXISTS feed_items_published_at_idx ON feed_items(published_at)'),
   ]);
-  var defaultSources = newsRows(await db.prepare('SELECT id, feed_url, (SELECT COUNT(*) FROM feed_items WHERE feed_items.source_id = feed_sources.id) AS item_count FROM feed_sources WHERE feed_url IN (?, ?) ORDER BY item_count DESC, id ASC').bind('https://meganvwalker.com/feed', NEWS_DEFAULT_SOURCE.feedUrl).all());
-  if (defaultSources.length) {
-    var primarySourceId = Number(defaultSources[0].id);
-    for (var sourceIndex = 1; sourceIndex < defaultSources.length; sourceIndex += 1) {
-      var duplicateSourceId = Number(defaultSources[sourceIndex].id);
-      await db.batch([
-        db.prepare('DELETE FROM feed_items WHERE source_id = ?').bind(duplicateSourceId),
-        db.prepare('DELETE FROM feed_sources WHERE id = ?').bind(duplicateSourceId),
-      ]);
+  for (var defaultIndex = 0; defaultIndex < NEWS_DEFAULT_SOURCES.length; defaultIndex += 1) {
+    var defaultSource = NEWS_DEFAULT_SOURCES[defaultIndex];
+    var feedUrls = [defaultSource.feedUrl];
+    if (defaultSource.name === 'Meghan') feedUrls.unshift('https://meganvwalker.com/feed');
+    var defaultSources = newsRows(await db.prepare('SELECT id, feed_url, (SELECT COUNT(*) FROM feed_items WHERE feed_items.source_id = feed_sources.id) AS item_count FROM feed_sources WHERE feed_url IN (?, ?) ORDER BY item_count DESC, id ASC').bind(feedUrls[0], feedUrls[1] || feedUrls[0]).all());
+    if (defaultSources.length) {
+      var primarySourceId = Number(defaultSources[0].id);
+      for (var sourceIndex = 1; sourceIndex < defaultSources.length; sourceIndex += 1) {
+        var duplicateSourceId = Number(defaultSources[sourceIndex].id);
+        await db.batch([
+          db.prepare('DELETE FROM feed_items WHERE source_id = ?').bind(duplicateSourceId),
+          db.prepare('DELETE FROM feed_sources WHERE id = ?').bind(duplicateSourceId),
+        ]);
+      }
+      await db.prepare('UPDATE feed_sources SET name = ?, homepage_url = ?, feed_url = ? WHERE id = ?').bind(defaultSource.name, defaultSource.homepageUrl, defaultSource.feedUrl, primarySourceId).run();
+    } else {
+      await db.prepare('INSERT INTO feed_sources (name, homepage_url, feed_url, is_active, last_checked_at, last_error, created_at, updated_at) VALUES (?, ?, ?, 1, NULL, NULL, ?, ?)').bind(defaultSource.name, defaultSource.homepageUrl, defaultSource.feedUrl, newsNow(), newsNow()).run();
     }
-    await db.prepare('UPDATE feed_sources SET name = ?, homepage_url = ?, feed_url = ? WHERE id = ?').bind(NEWS_DEFAULT_SOURCE.name, NEWS_DEFAULT_SOURCE.homepageUrl, NEWS_DEFAULT_SOURCE.feedUrl, primarySourceId).run();
-  } else {
-    await db.prepare('INSERT INTO feed_sources (name, homepage_url, feed_url, is_active, last_checked_at, last_error, created_at, updated_at) VALUES (?, ?, ?, 1, NULL, NULL, ?, ?)').bind(NEWS_DEFAULT_SOURCE.name, NEWS_DEFAULT_SOURCE.homepageUrl, NEWS_DEFAULT_SOURCE.feedUrl, newsNow(), newsNow()).run();
   }
   newsSchemaReady = true;
 }
@@ -151,33 +158,6 @@ function parseFeed(xml, feedUrl, limit) {
   return articles.slice(0, maxItems);
 }
 
-function sourceNameFromHtml(html, fallback) {
-  var og = /<meta\b[^>]*(?:property|name)=["']og:site_name["'][^>]*content=["']([^"']+)["'][^>]*>/i.exec(html) || /<meta\b[^>]*content=["']([^"']+)["'][^>]*(?:property|name)=["']og:site_name["'][^>]*>/i.exec(html);
-  var title = /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(html);
-  return cleanNewsText((og && og[1]) || (title && decodeXml(title[1])) || fallback, 120);
-}
-
-async function discoverNewsSource(value) {
-  var first = await fetchNewsUrl(value, 'application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.9');
-  var directArticles = parseFeed(first.text, first.url);
-  if (directArticles.length) return { feedUrl: first.url, homepageUrl: new URL(first.url).origin + '/', name: new URL(first.url).hostname, articles: directArticles };
-  var links = first.text.match(/<link\b[^>]*>/gi) || [];
-  for (var index = 0; index < links.length; index += 1) {
-    var tag = links[index];
-    var rel = xmlAttribute(tag, 'rel').toLowerCase();
-    var type = xmlAttribute(tag, 'type').toLowerCase();
-    var href = xmlAttribute(tag, 'href');
-    if (href && rel.includes('alternate') && (type.includes('rss') || type.includes('atom') || type.includes('xml'))) {
-      var feedUrl = normaliseNewsUrl(href, first.url);
-      if (!feedUrl) continue;
-      var feed = await fetchNewsUrl(feedUrl, 'application/rss+xml, application/atom+xml, application/xml, text/xml');
-      var articles = parseFeed(feed.text, feed.url);
-      if (articles.length) return { feedUrl: feed.url, homepageUrl: first.url, name: sourceNameFromHtml(first.text, new URL(first.url).hostname), articles: articles };
-    }
-  }
-  throw new Error('No public RSS or Atom feed was found at that address.');
-}
-
 function sourceFromRow(row) {
   return { id: Number(row.id), name: row.name, homepageUrl: row.homepage_url, feedUrl: row.feed_url, isActive: Boolean(row.is_active), lastCheckedAt: row.last_checked_at ? Number(row.last_checked_at) : null, lastError: row.last_error || null };
 }
@@ -219,12 +199,6 @@ async function refreshStaleNews(env, sourceId) {
   await Promise.all(candidates.map(function (source) { return refreshNewsSource(env, source); }));
 }
 
-function isNewsOwner(request, env) {
-  var owner = cleanNewsText(env && env.NEWS_OWNER_EMAIL, 254).toLowerCase();
-  var user = cleanNewsText(request.headers.get('oai-authenticated-user-email'), 254).toLowerCase();
-  return Boolean(owner && user && owner === user);
-}
-
 async function handlePublicNews(request, env) {
   if (request.method !== 'GET') return newsError('Method not allowed.', 405);
   var url = new URL(request.url); var sourceId = Number(url.searchParams.get('source') || 0) || 0;
@@ -235,25 +209,6 @@ async function handlePublicNews(request, env) {
   var rows = newsRows(await statement.all());
   var sources = await listNewsSources(env);
   return json({ items: rows.map(function (row) { return { id: Number(row.id), sourceId: Number(row.source_id), sourceName: row.source_name, sourceUrl: row.homepage_url, title: row.title, summary: row.summary || '', url: row.url, publishedAt: Number(row.published_at) }; }), sources: sources.filter(function (source) { return source.isActive; }), refreshedAt: newsNow() });
-}
-
-async function requireNewsOwner(request, env) {
-  if (!isNewsOwner(request, env)) return newsError(request.headers.get('oai-authenticated-user-email') ? 'This account cannot manage shared sources.' : 'Sign in with ChatGPT to manage shared sources.', request.headers.get('oai-authenticated-user-email') ? 403 : 401);
-  return null;
-}
-
-async function addNewsSource(request, env) {
-  var payload = await request.json(); var input = cleanNewsText(payload && payload.url, 2048); var customName = cleanNewsText(payload && payload.name, 120);
-  if (!input) return newsError('Enter a website or RSS/Atom URL.');
-  var existing = await listNewsSources(env);
-  if (existing.length >= NEWS_MAX_SOURCES) return newsError('The shared board already has the maximum of ' + NEWS_MAX_SOURCES + ' sources.', 409);
-  var discovered;
-  try { discovered = await discoverNewsSource(input); } catch (error) { return newsError(cleanNewsText(error instanceof Error ? error.message : 'Could not add this source.', 240)); }
-  var now = newsNow(); var name = customName || discovered.name;
-  try {
-    var created = await newsDb(env).prepare('INSERT INTO feed_sources (name, homepage_url, feed_url, is_active, last_checked_at, last_error, created_at, updated_at) VALUES (?, ?, ?, 1, ?, NULL, ?, ?) RETURNING id, name, homepage_url, feed_url, is_active, last_checked_at, last_error').bind(name, discovered.homepageUrl, discovered.feedUrl, now, now, now).all();
-    var source = sourceFromRow(newsRows(created)[0]); await storeNewsArticles(env, source, discovered.articles); return json({ source: source }, 201);
-  } catch (error) { return newsError('That feed is already on the shared board.', 409); }
 }
 
 async function updateNewsSource(request, env, id) {
@@ -269,10 +224,9 @@ async function deleteNewsSource(env, id) {
 }
 
 async function handleNewsSources(request, env, pathname) {
-  var denied = await requireNewsOwner(request, env); if (denied) return denied;
   if (pathname === '/api/news/sources') {
     if (request.method === 'GET') return json({ sources: await listNewsSources(env) });
-    if (request.method === 'POST') return addNewsSource(request, env);
+    if (request.method === 'POST') return newsError('Adding new sources is disabled.', 405);
     return newsError('Method not allowed.', 405);
   }
   var match = /^\/api\/news\/sources\/(\d+)(\/refresh)?$/.exec(pathname);

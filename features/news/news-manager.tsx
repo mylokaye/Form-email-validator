@@ -1,15 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
-import { Check, ExternalLink, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, ExternalLink, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 type Source = { id: number; name: string; homepageUrl: string; feedUrl: string; isActive: boolean; lastCheckedAt: number | null; lastError: string | null };
-type Access = 'checking' | 'allowed' | 'forbidden' | 'signed-out';
-
 function displayCheck(timestamp: number | null) {
   return timestamp ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp)) : 'Not checked yet';
 }
@@ -33,43 +30,31 @@ function SourceRow({ source, onChange, onDelete, onRefresh }: { source: Source; 
 }
 
 export function NewsManager() {
-  const [access, setAccess] = useState<Access>('checking');
+  const [loading, setLoading] = useState(true);
   const [sources, setSources] = useState<Source[]>([]);
-  const [url, setUrl] = useState('');
-  const [name, setName] = useState('');
-  const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
 
   const load = async () => {
     setError('');
-    const response = await fetch('/api/news/sources');
-    if (response.status === 401) { setAccess('signed-out'); return; }
-    if (response.status === 403) { setAccess('forbidden'); return; }
-    const payload = await response.json() as { sources?: Source[]; error?: string };
-    if (!response.ok) { setError(payload.error || 'Sources could not be loaded.'); setAccess('allowed'); return; }
-    setSources(payload.sources || []); setAccess('allowed');
+    try {
+      const response = await fetch('/api/news/sources');
+      const payload = await response.json() as { sources?: Source[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || 'Sources could not be loaded.');
+      setSources(payload.sources || []);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Sources could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { void load(); }, []);
-
-  const add = async (event: FormEvent) => {
-    event.preventDefault(); setAdding(true); setError('');
-    try {
-      const response = await fetch('/api/news/sources', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, name }) });
-      const payload = await response.json() as { source?: Source; error?: string };
-      if (!response.ok || !payload.source) throw new Error(payload.error || 'Could not add this source.');
-      setSources((current) => [...current, payload.source!].sort((a, b) => a.name.localeCompare(b.name))); setUrl(''); setName('');
-    } catch (addError) { setError(addError instanceof Error ? addError.message : 'Could not add this source.'); }
-    finally { setAdding(false); }
-  };
 
   const update = (next: Source) => setSources((current) => current.map((source) => source.id === next.id ? next : source));
   const remove = async (id: number) => { if (!window.confirm('Remove this shared news source?')) return; const response = await fetch(`/api/news/sources/${id}`, { method: 'DELETE' }); if (response.ok) setSources((current) => current.filter((source) => source.id !== id)); else setError('Could not remove this source.'); };
   const refresh = async (id: number) => { const response = await fetch(`/api/news/sources/${id}/refresh`, { method: 'POST' }); const payload = await response.json() as { source?: Source; error?: string }; if (!response.ok || !payload.source) setError(payload.error || 'Could not refresh this source.'); else update(payload.source); };
 
-  if (access === 'checking') return <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Checking manager access…</CardContent></Card>;
-  if (access === 'signed-out') return <Card><CardContent className="space-y-3 py-12 text-center"><p className="font-medium">Sign in to manage shared sources.</p><p className="text-sm text-muted-foreground">Only the Pattens owner can change this public newsroom.</p><Link href="/signin-with-chatgpt?return_to=/news/manage/" className="inline-flex h-8 items-center rounded-[10px] bg-primary px-3 text-[13px] leading-4 font-medium text-primary-foreground">Sign in with ChatGPT</Link></CardContent></Card>;
-  if (access === 'forbidden') return <Card><CardContent className="py-12 text-center"><p className="font-medium">This account cannot manage shared sources.</p><p className="mt-1 text-sm text-muted-foreground">The newsroom remains publicly available.</p><Link href="/news/" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">View latest news</Link></CardContent></Card>;
+  if (loading) return <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Loading shared sources…</CardContent></Card>;
 
-  return <div className="space-y-6"><div><p className="text-sm font-medium text-muted-foreground">Owner controls</p><h1 className="mt-1 text-2xl font-semibold tracking-tight">Manage shared sources</h1><p className="mt-1 text-sm text-muted-foreground">Add a publication homepage or direct RSS/Atom feed. Pattens discovers and caches the latest stories.</p></div>{error && <Card className="border-destructive/30 bg-destructive/5"><CardContent className="py-1 text-sm text-destructive" role="alert">{error}</CardContent></Card>}<Card><CardHeader className="border-b"><CardTitle>Add source</CardTitle></CardHeader><CardContent className="pt-4"><form className="grid gap-3 md:grid-cols-[1fr_220px_auto]" onSubmit={add}><Input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Website or RSS/Atom URL" type="url" required /><Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Optional display name" /><Button type="submit" disabled={adding}><Plus />{adding ? 'Adding…' : 'Add source'}</Button></form></CardContent></Card><Card><CardHeader className="border-b"><CardTitle>Sources</CardTitle><Link href="/news/" className="text-sm font-medium text-primary hover:underline">View news</Link></CardHeader><CardContent>{sources.length ? sources.map((source) => <SourceRow key={source.id} source={source} onChange={update} onDelete={(id) => void remove(id)} onRefresh={(id) => void refresh(id)} />) : <p className="py-8 text-center text-sm text-muted-foreground">No sources yet.</p>}</CardContent></Card></div>;
+  return <div className="space-y-6"><div><p className="text-sm font-medium text-muted-foreground">Shared newsroom</p><h1 className="mt-1 text-2xl font-semibold tracking-tight">Manage shared sources</h1><p className="mt-1 text-sm text-muted-foreground">Existing sources can be refreshed or updated. New sources are maintained in the Pattens deployment.</p></div>{error && <Card className="border-destructive/30 bg-destructive/5"><CardContent className="py-1 text-sm text-destructive" role="alert">{error}</CardContent></Card>}<Card><CardHeader className="border-b"><CardTitle>Sources</CardTitle></CardHeader><CardContent>{sources.length ? sources.map((source) => <SourceRow key={source.id} source={source} onChange={update} onDelete={(id) => void remove(id)} onRefresh={(id) => void refresh(id)} />) : <p className="py-8 text-center text-sm text-muted-foreground">No sources yet.</p>}</CardContent></Card></div>;
 }

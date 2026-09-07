@@ -12,6 +12,7 @@ type NewsStoriesProps = {
   initialData?: NewsResponse | null;
   limit?: number;
   sourceFilterLabels?: Record<string, string>;
+  sourceFilterGroups?: { id: string; label: string; sourceNames: string[] }[];
   title: string;
   description?: string;
   showViewAll?: boolean;
@@ -28,7 +29,7 @@ function displayTitle(title: string, shouldClip: boolean) {
   return words.length > 6 ? `${words.slice(0, 6).join(' ')}...` : title;
 }
 
-export function NewsStories({ initialData, limit, sourceFilterLabels, title, description, showViewAll = false, showSourceFilter = false }: NewsStoriesProps) {
+export function NewsStories({ initialData, limit, sourceFilterLabels, sourceFilterGroups, title, description, showViewAll = false, showSourceFilter = false }: NewsStoriesProps) {
   const [data, setData] = useState<NewsResponse>(initialData ?? { items: [], sources: [], refreshedAt: 0 });
   const [selectedSource, setSelectedSource] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,17 +38,18 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, title, des
   const load = async (source = selectedSource) => {
     setLoading(true);
     setError('');
+    const group = sourceFilterGroups?.find((option) => option.id === source);
     if (initialData) {
-      setData({ ...initialData, items: source ? initialData.items.filter((item) => String(item.sourceId) === source) : initialData.items });
+      setData({ ...initialData, items: source ? (group ? initialData.items.filter((item) => group.sourceNames.includes(item.sourceName)) : initialData.items.filter((item) => String(item.sourceId) === source)) : initialData.items });
       setLoading(false);
       return;
     }
     try {
-      const query = source ? `?source=${encodeURIComponent(source)}` : '';
+      const query = source && !group ? `?source=${encodeURIComponent(source)}` : '';
       const response = await fetch(`/api/news${query}`);
       const payload = await response.json() as NewsResponse & { error?: string };
       if (!response.ok) throw new Error(payload.error || 'News could not be loaded.');
-      setData(payload);
+      setData(group ? { ...payload, items: payload.items.filter((item) => group.sourceNames.includes(item.sourceName)) } : payload);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'News could not be loaded.');
     } finally {
@@ -81,7 +83,7 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, title, des
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
           <div className="flex flex-wrap items-center gap-1 rounded-full border border-input bg-muted/45 p-1" role="group" aria-label="Filter latest news">
             <span className="sr-only">Filter latest news</span>
-            {[{ id: '', label: 'All' }, ...data.sources.map((source) => ({ id: String(source.id), label: sourceFilterLabels?.[source.name] || source.name }))].map((option) => (
+            {[{ id: '', label: 'All' }, ...(sourceFilterGroups || data.sources.map((source) => ({ id: String(source.id), label: sourceFilterLabels?.[source.name] || source.name, sourceNames: [] })))].map((option) => (
               <Button key={option.id || 'all'} type="button" variant="ghost" size="sm" aria-pressed={selectedSource === option.id} onClick={() => { setSelectedSource(option.id); void load(option.id); }} className={`h-7 rounded-full px-3 text-xs ${selectedSource === option.id ? 'bg-background text-foreground shadow-sm hover:bg-background' : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'}`}>
                 {option.label}
               </Button>
