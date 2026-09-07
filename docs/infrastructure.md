@@ -27,7 +27,7 @@ flowchart TB
   Browser["User browser"] -->|HTTPS| Static
 
   LocalBrowser["Local browser"] --> LocalDev["Next dev server: UI + server-rendered public data"]
-  LocalDev -->|development-only server fetch for News and release monitor| Worker
+  LocalDev -->|development-only server fetch for homepage news| Worker
   LocalDev -->|development-only server fetch for roadmap updates| M365RoadmapFeed
 
   subgraph APIs["Worker API routes"]

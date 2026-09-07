@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Command as CommandIcon, House, Link2, MessagesSquare, PanelsTopLeft, Rss, Sparkles, Sun, WandSparkles } from 'lucide-react';
+import { CheckCircle2, Command as CommandIcon, House, Link2, MessagesSquare, PanelsTopLeft, Sparkles, Sun, WandSparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Separator } from './ui/separator';
@@ -16,7 +16,6 @@ const tools = [
   { href: '/', label: 'Home', icon: House },
   { href: '/generate/', label: 'Generate', icon: WandSparkles },
   { href: '/validate/', label: 'Validate', icon: CheckCircle2 },
-  { href: '/news/', label: 'News', icon: Rss },
   { href: '/logic/', label: 'Logic', icon: Link2 },
   { href: '/simulation/', label: 'Simulation', icon: MessagesSquare },
   { href: '/studio/', label: 'Studio', icon: PanelsTopLeft },
@@ -46,9 +45,6 @@ function WorkspaceContent({ children }: { children: React.ReactNode }) {
       ? stored
       : 'glass';
     applyAppearance(nextAppearance);
-  }, []);
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') void fetch('/api/release-monitor').catch(() => undefined);
   }, []);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

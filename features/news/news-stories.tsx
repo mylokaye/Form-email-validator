@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowRight, ExternalLink, RefreshCw, Rss } from 'lucide-react';
+import { ExternalLink, RefreshCw, Rss } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,6 @@ type NewsStoriesProps = {
   sourceFilterGroups?: { id: string; label: string; sourceNames: string[] }[];
   title: string;
   description?: string;
-  showViewAll?: boolean;
   showSourceFilter?: boolean;
 };
 
@@ -29,7 +27,7 @@ function displayTitle(title: string, shouldClip: boolean) {
   return words.length > 6 ? `${words.slice(0, 6).join(' ')}...` : title;
 }
 
-export function NewsStories({ initialData, limit, sourceFilterLabels, sourceFilterGroups, title, description, showViewAll = false, showSourceFilter = false }: NewsStoriesProps) {
+export function NewsStories({ initialData, limit, sourceFilterLabels, sourceFilterGroups, title, description, showSourceFilter = false }: NewsStoriesProps) {
   const [data, setData] = useState<NewsResponse>(initialData ?? { items: [], sources: [], refreshedAt: 0 });
   const [selectedSource, setSelectedSource] = useState('');
   const [loading, setLoading] = useState(true);
@@ -74,9 +72,6 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, sourceFilt
           <CardTitle>{title}</CardTitle>
           {description && <CardDescription className="mt-1">{description}</CardDescription>}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {showViewAll && <Button nativeButton={false} variant="link" size="sm" render={<Link href="/news/" />}>View all<ArrowRight data-icon="inline-end" /></Button>}
-        </div>
       </CardHeader>
 
       {showSourceFilter && (
@@ -96,7 +91,7 @@ export function NewsStories({ initialData, limit, sourceFilterLabels, sourceFilt
       <CardContent className="p-4">
         {error && <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">{error}</div>}
         {loading && <div className="flex min-h-48 items-center justify-center text-sm text-muted-foreground">Refreshing the latest stories…</div>}
-        {!loading && !error && visibleItems.length === 0 && <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-10 text-center"><Rss className="size-7 text-muted-foreground" /><p className="font-medium">The newsroom is getting ready.</p><p className="max-w-sm text-sm text-muted-foreground">Stories will appear here once a shared RSS or Atom source is added.</p>{showSourceFilter && <Link href="/news/manage/" className="mt-2 text-sm font-medium text-primary hover:underline">Manage sources</Link>}</div>}
+        {!loading && !error && visibleItems.length === 0 && <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-10 text-center"><Rss className="size-7 text-muted-foreground" /><p className="font-medium">The newsroom is getting ready.</p><p className="max-w-sm text-sm text-muted-foreground">Stories will appear here once a shared RSS or Atom source is added.</p></div>}
         {!loading && !error && visibleItems.length > 0 && (
           <div className={limit ? 'grid gap-4 md:grid-cols-3' : 'grid gap-4 lg:grid-cols-2'}>
             {visibleItems.map((item) => (

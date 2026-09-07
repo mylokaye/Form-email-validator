@@ -10,7 +10,8 @@ export function buildLinkUrl(values: LinkValues) {
   let url: URL;
   try { url = new URL(values.baseUrl.trim()); } catch { return ''; }
   const basePath = url.pathname.replace(/\/+$/g, '');
-  url.pathname = `${basePath}/`.replace(/\/{2,}/g, '/'); url.search = '';
+  const isDynamicsMarketingUrl = url.hostname.toLowerCase().endsWith('.mkt.dynamics.com');
+  url.pathname = (isDynamicsMarketingUrl ? basePath : `${basePath}/`).replace(/\/{2,}/g, '/'); url.search = '';
   const trackingTypes = (['MTM', 'UTM'] as TrackingType[]).filter((type) => values.trackingTypes.includes(type));
   (trackingTypes.length ? trackingTypes : ['MTM']).forEach((type) => {
     const prefix = type === 'UTM' ? 'utm' : 'mtm';
