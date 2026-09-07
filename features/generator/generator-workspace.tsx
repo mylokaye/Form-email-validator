@@ -160,31 +160,35 @@ export function GeneratorWorkspace() {
                     onChange={setLinkUrl}
                   />
                 </div>
-                <Field
-                  label="Source"
-                  value={link.source}
-                  onChange={(value) => linkSet("source", value)}
-                />
-                <Field
-                  label="Medium"
-                  value={link.medium}
-                  onChange={(value) => linkSet("medium", value)}
-                />
-                <Field
-                  label="Campaign"
-                  value={link.campaign}
-                  onChange={(value) => linkSet("campaign", value)}
-                />
-                <Field
-                  label="Content"
-                  value={link.content}
-                  onChange={(value) => linkSet("content", value)}
-                />
-                <Field
-                  label="Term"
-                  value={link.term}
-                  onChange={(value) => linkSet("term", value)}
-                />
+                <div className="grid gap-4 sm:col-span-2 sm:grid-cols-3">
+                  <Field
+                    label="Source"
+                    value={link.source}
+                    onChange={(value) => linkSet("source", value)}
+                  />
+                  <Field
+                    label="Medium"
+                    value={link.medium}
+                    onChange={(value) => linkSet("medium", value)}
+                  />
+                  <Field
+                    label="Content"
+                    value={link.content}
+                    onChange={(value) => linkSet("content", value)}
+                  />
+                </div>
+                <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                  <Field
+                    label="Campaign"
+                    value={link.campaign}
+                    onChange={(value) => linkSet("campaign", value)}
+                  />
+                  <Field
+                    label="Term"
+                    value={link.term}
+                    onChange={(value) => linkSet("term", value)}
+                  />
+                </div>
                 <div className="flex gap-2 sm:col-span-2">
                   {(["MTM", "UTM"] as TrackingType[]).map((type) => (
                     <Button
@@ -210,18 +214,18 @@ export function GeneratorWorkspace() {
                   >
                     Simple
                   </Button>
+                  {dynamicsDetected && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={link.dynamicsNoCache ? "default" : "secondary"}
+                      onClick={() => setLink((current) => ({ ...current, dynamicsNoCache: !current.dynamicsNoCache }))}
+                      aria-pressed={link.dynamicsNoCache}
+                    >
+                      Cache
+                    </Button>
+                  )}
                 </div>
-                {dynamicsDetected && (
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
-                    <input
-                      type="checkbox"
-                      checked={link.dynamicsNoCache}
-                      onChange={(event) => setLink((current) => ({ ...current, dynamicsNoCache: event.target.checked }))}
-                      className="size-4 accent-primary"
-                    />
-                    Add Dynamics no-cache parameter
-                  </label>
-                )}
               </>
             )}
             {mode === "campaign" && (
