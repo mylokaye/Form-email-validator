@@ -200,6 +200,16 @@ export function GeneratorWorkspace() {
                       {type}
                     </Button>
                   ))}
+                  <span className="flex-1" aria-hidden="true" />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={link.simple ? "default" : "secondary"}
+                    onClick={() => setLink((current) => ({ ...current, simple: !current.simple }))}
+                    aria-pressed={link.simple}
+                  >
+                    Simple
+                  </Button>
                 </div>
                 {dynamicsDetected && (
                   <label className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
@@ -212,15 +222,6 @@ export function GeneratorWorkspace() {
                     Add Dynamics no-cache parameter
                   </label>
                 )}
-                <label className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
-                  <input
-                    type="checkbox"
-                    checked={link.simple}
-                    onChange={(event) => setLink((current) => ({ ...current, simple: event.target.checked }))}
-                    className="size-4 accent-primary"
-                  />
-                  Add simple parameter
-                </label>
               </>
             )}
             {mode === "campaign" && (
