@@ -170,7 +170,7 @@ export function GeneratorWorkspace() {
                   <Field
                     label="Medium"
                     value={link.medium}
-                    onChange={(value) => linkSet("medium", value)}
+                    onChange={(value) => setLink((current) => ({ ...current, medium: value, tradeshow: false }))}
                   />
                   <Field
                     label="Content"
@@ -219,7 +219,10 @@ export function GeneratorWorkspace() {
                     type="button"
                     size="sm"
                     variant={link.tradeshow ? "default" : "secondary"}
-                    onClick={() => setLink((current) => ({ ...current, tradeshow: !current.tradeshow }))}
+                    onClick={() => setLink((current) => {
+                      const tradeshow = !current.tradeshow;
+                      return { ...current, tradeshow, medium: tradeshow ? "Tradeshow" : (current.medium === "Tradeshow" ? "" : current.medium) };
+                    })}
                     aria-pressed={link.tradeshow}
                   >
                     Tradeshow
